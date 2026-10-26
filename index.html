@@ -1,0 +1,1115 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sổ Điểm KHTN — nhập điểm Lí, Hoá, Sinh · tổng hợp · điền file vnEdu</title>
+<!--
+  Sổ Điểm KHTN (khối 8, 9) · một file chạy không cần mạng · không gửi dữ liệu đi đâu.
+  Chỉ dùng MÃ học sinh (HS01…). Họ tên đọc từ file vnEdu chỉ nằm trong trình duyệt máy này.
+  Dữ liệu lưu trong trình duyệt (localStorage) + nút Sao lưu ra file .json.
+  ✅ BẢN NHÁP — thầy/cô duyệt trước khi dùng.
+-->
+<style>
+:root{--ink:#1e2433;--muted:#667085;--line:#e4e7ef;--soft:#f6f7fb;--pri:#0f766e;--pri2:#0891b2;--pri-bg:#e0f2f1;
+  --li:#2563eb;--hoa:#db2777;--sinh:#16a34a;--ok:#15803d;--okbg:#dcfce7;--warn:#b45309;--warnbg:#fef3c7;--bad:#b91c1c;--badbg:#fee2e2;
+  --r:16px;--sh:0 1px 2px rgba(20,30,60,.05),0 10px 26px rgba(20,60,90,.08)}
+*{box-sizing:border-box}
+html,body{margin:0;color:var(--ink);font:15px/1.45 "Segoe UI",system-ui,-apple-system,Roboto,Arial,sans-serif}
+body{background:radial-gradient(900px 500px at 0 0,#d9f2ee 0,transparent 60%),radial-gradient(800px 500px at 100% 10%,#fde2ef 0,transparent 55%),linear-gradient(180deg,#f3f8f8,#f4f3fb);min-height:100vh}
+button,input,select,textarea{font:inherit;color:inherit}button{cursor:pointer}.hidden{display:none!important}
+.top{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:12px 20px;color:#fff;background:linear-gradient(120deg,#134e4a,#0f766e 45%,#7c3aed);position:relative;overflow:hidden}
+.top::after{content:"";position:absolute;right:-70px;top:-90px;width:280px;height:280px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.2),transparent 70%)}
+.brand{display:flex;align-items:center;gap:12px}.brand h1{margin:0;font-size:24px;letter-spacing:.5px;background:linear-gradient(90deg,#fff,#fde68a);-webkit-background-clip:text;background-clip:text;color:transparent}.brand p{margin:0;font-size:13px;opacity:.9}
+.logo{animation:bob 4s ease-in-out infinite;filter:drop-shadow(0 3px 6px rgba(0,0,0,.25))}@keyframes bob{50%{transform:translateY(-3px) rotate(-3deg)}}
+.tools{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-left:auto;z-index:1}.tools select{max-width:230px;padding:7px 10px;border-radius:10px;border:0;color:var(--ink)}
+.tbtn{border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.13);color:#fff;border-radius:10px;padding:7px 11px;white-space:nowrap}.tbtn:hover{background:rgba(255,255,255,.25)}
+.draft{background:#fff7d6;border-bottom:1px solid #f0dc8a;color:#6b4e00;padding:7px 20px;font-size:13.5px}
+.demo-rib{background:repeating-linear-gradient(45deg,#fde68a,#fde68a 12px,#fef3c7 12px,#fef3c7 24px);color:#78350f;font-weight:700;text-align:center;padding:4px;font-size:13px}
+.tabs{display:flex;gap:6px;padding:12px 20px 0;flex-wrap:wrap}
+.tab{display:flex;align-items:center;gap:7px;border:1px solid var(--line);background:#fff;border-radius:999px;padding:7px 14px 7px 8px;font-weight:600;color:#344054;transition:.15s}
+.tab .ic{display:grid;place-items:center;width:28px;height:28px;border-radius:50%;background:var(--soft)}.tab:hover{transform:translateY(-1px)}
+.tab.on{background:linear-gradient(120deg,var(--pri),var(--pri2));color:#fff;border-color:transparent;box-shadow:0 6px 16px rgba(15,118,110,.3)}.tab.on .ic{background:rgba(255,255,255,.22)}
+main{padding:14px 20px 50px;max-width:1500px;margin:0 auto}.view{animation:fade .3s ease}@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.card{background:#fff;border:1px solid var(--line);border-radius:var(--r);padding:16px 18px;margin-bottom:14px;box-shadow:var(--sh);min-width:0}
+.card h2{margin:0 0 12px;font-size:17px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}.card h2 .n{display:grid;place-items:center;width:30px;height:30px;border-radius:10px;background:var(--pri-bg)}.card h2 .rt{margin-left:auto;display:flex;gap:6px;flex-wrap:wrap}
+.sub{color:var(--muted);font-size:13px;margin:-6px 0 10px}
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:14px;align-items:start}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px 14px}
+.fld{display:flex;flex-direction:column;gap:4px;font-size:13px;color:#475467;font-weight:600}
+.fld input,.fld select,.inp{font-weight:400;padding:8px 10px;border:1px solid #d0d5dd;border-radius:10px;background:#fff;color:var(--ink);min-width:0}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.btn{border:1px solid #d0d5dd;background:#fff;border-radius:11px;padding:8px 13px;font-weight:600;color:#344054;transition:.12s;min-height:38px}.btn:hover{background:var(--soft);transform:translateY(-1px)}.btn:active{transform:scale(.98)}
+.btn.pri{background:linear-gradient(120deg,var(--pri),var(--pri2));border-color:transparent;color:#fff}.btn.ok{background:linear-gradient(120deg,#16a34a,#0d9488);border-color:transparent;color:#fff}
+.btn.acc{background:linear-gradient(120deg,#f97316,#f59e0b);border-color:transparent;color:#fff}.btn.bad{color:var(--bad);border-color:#f3b4b4}.btn.sm{padding:4px 10px;font-size:13px;min-height:30px}.btn.big{padding:12px 18px;font-size:16px;border-radius:14px}
+.gv [data-act=lopMoi]{display:none}.sc[readonly]{background:#f1f5f9;color:#475569;cursor:not-allowed;border-style:dashed}
+.hint{border-radius:12px;padding:10px 12px;font-size:13.5px;margin-top:10px}.hint.ok{background:var(--okbg);color:#14532d}.hint.warn{background:var(--warnbg);color:#78350f}.hint.info{background:#e0f2fe;color:#0c4a6e}.hint.bad{background:var(--badbg);color:#7f1d1d}
+.pill{display:inline-flex;align-items:center;gap:4px;border-radius:999px;padding:2px 9px;font-size:12px;font-weight:700;background:var(--soft);color:#475467;white-space:nowrap}
+.muted{color:var(--muted)}.small{font-size:12.5px}
+.tbl{overflow:auto;max-width:100%;border:1px solid var(--line);border-radius:12px}
+table.t{border-collapse:collapse;width:100%;font-size:13.5px}table.t th,table.t td{border-bottom:1px solid var(--line);padding:5px 7px;text-align:center;vertical-align:middle}
+table.t th{background:var(--soft);position:sticky;top:0;z-index:1;font-size:12.5px;color:#475467}table.t td:first-child,table.t th:first-child,table.t td.l{text-align:left}
+table.t tr:hover td{background:#fafcfc}
+.sc{width:62px;text-align:center;padding:6px 4px;border:1px solid #d0d5dd;border-radius:9px;font-variant-numeric:tabular-nums}.sc:focus{outline:2px solid #99f6e4;border-color:var(--pri)}
+.sc.sai{border-color:#ef4444;background:#fef2f2;color:#b91c1c;font-weight:700}.sc.rung{animation:rung .35s}@keyframes rung{25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+#loiO{position:fixed;z-index:60;max-width:300px;background:#b91c1c;color:#fff;padding:8px 12px;border-radius:10px;font-size:13.5px;line-height:1.4;box-shadow:0 6px 18px rgba(0,0,0,.25);pointer-events:none}#loiO::before{content:'';position:absolute;top:-6px;left:22px;border:6px solid transparent;border-top:0;border-bottom-color:#b91c1c}.sc.co{background:#f0fdfa}
+.thieu{background:#fff7ed!important;color:#c2410c;font-weight:700}
+.pm{display:inline-flex;align-items:center;gap:6px;border:2px solid transparent;border-radius:13px;padding:8px 14px;font-weight:800;font-size:15px}
+.pm.li{background:#eff6ff;color:#1d4ed8}.pm.hoa{background:#fdf2f8;color:#be185d}.pm.sinh{background:#f0fdf4;color:#15803d}
+.pm.on.li{border-color:#2563eb;box-shadow:0 4px 12px rgba(37,99,235,.25)}.pm.on.hoa{border-color:#db2777;box-shadow:0 4px 12px rgba(219,39,119,.25)}.pm.on.sinh{border-color:#16a34a;box-shadow:0 4px 12px rgba(22,163,74,.25)}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#fff}.seg button{border:0;background:transparent;padding:7px 13px;font-weight:600;color:#475467}.seg button.on{background:var(--pri);color:#fff}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:14px}
+.kpi{border-radius:18px;padding:14px 16px;color:#fff;position:relative;overflow:hidden;box-shadow:var(--sh)}.kpi b{display:block;font-size:28px;line-height:1.1}.kpi span{font-size:13px;opacity:.92}.kpi .e{position:absolute;right:10px;top:8px;font-size:28px;opacity:.35}
+.out{width:100%;min-height:90px;padding:10px;border-radius:12px;border:1px solid #d0d5dd;font-family:Consolas,monospace;font-size:12px;background:#f8fafc}
+#toast{position:fixed;right:16px;bottom:16px;display:flex;flex-direction:column;gap:8px;z-index:90}
+.tst{background:#1e2433;color:#fff;border-radius:12px;padding:10px 14px;box-shadow:0 8px 24px rgba(0,0,0,.25);max-width:380px;font-size:14px;display:flex;gap:10px;align-items:center;animation:fade .25s}
+.tst.ok{background:#166534}.tst.bad{background:#991b1b}.tst.warn{background:#92400e}.tst button{border:0;border-radius:8px;padding:4px 9px;background:rgba(255,255,255,.2);color:#fff;font-weight:700}
+#modal{position:fixed;inset:0;background:rgba(20,16,40,.5);display:grid;place-items:center;z-index:80;padding:14px}
+.mbox{background:#fff;border-radius:18px;max-width:760px;width:100%;max-height:92vh;overflow:auto;padding:18px 20px;box-shadow:0 24px 60px rgba(0,0,0,.3);animation:fade .25s}.mbox h3{margin:0 0 10px;font-size:18px}.mbtns{display:flex;gap:8px;justify-content:flex-end;margin-top:14px;flex-wrap:wrap}
+#fx{position:fixed;inset:0;pointer-events:none;z-index:70}
+.drop{display:block;border:2px dashed #99d5cf;border-radius:14px;padding:18px;text-align:center;background:#f6fbfb;cursor:pointer}
+details.box{border:1px dashed #b7dcd7;border-radius:12px;padding:8px 12px;margin-top:10px;background:#fbfefe}details.box summary{cursor:pointer;font-weight:700;color:#0f766e}
+.sv{width:100%;height:auto;display:block}.legend{display:flex;gap:10px;flex-wrap:wrap;font-size:13px}.legend i{display:inline-block;width:12px;height:12px;border-radius:4px;margin-right:4px;vertical-align:-1px}
+.welcome{text-align:center;padding:26px 16px}.welcome h2{font-size:26px;margin:10px 0 4px}
+@media (max-width:860px){.tab .lb{display:none}.tab{padding:6px}main{padding:12px 10px 40px}.tabs{padding:10px 10px 0}.top{padding:10px 12px}.brand h1{font-size:20px}}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="brand">
+    <svg class="logo" width="50" height="50" viewBox="0 0 64 64" aria-hidden="true">
+      <ellipse cx="32" cy="32" rx="27" ry="10" fill="none" stroke="#93c5fd" stroke-width="3"/>
+      <ellipse cx="32" cy="32" rx="27" ry="10" fill="none" stroke="#f9a8d4" stroke-width="3" transform="rotate(60 32 32)"/>
+      <ellipse cx="32" cy="32" rx="27" ry="10" fill="none" stroke="#86efac" stroke-width="3" transform="rotate(120 32 32)"/>
+      <circle cx="32" cy="32" r="8" fill="#fde047" stroke="#f59e0b" stroke-width="2"/>
+    </svg>
+    <div><h1>SỔ ĐIỂM KHTN</h1><p>Lí · Hoá · Sinh → điểm KHTN → file vnEdu · khối 8, 9 · không cần mạng</p></div>
+  </div>
+  <div class="tools">
+    <select id="clsSel" aria-label="Lớp đang làm"></select>
+    <button class="tbtn" data-act="lopMoi">＋ Lớp mới</button>
+    <button class="tbtn" data-act="saoLuu">💾 Sao lưu</button>
+    <button class="tbtn" data-act="moSaoLuu">📂 Mở bản sao lưu</button>
+    <button class="tbtn" data-act="tatTieng" id="muteBtn" title="Bật/tắt âm thanh">🔈</button>
+    <input type="file" id="fileIn" accept=".json,application/json" class="hidden">
+  </div>
+</header>
+<div class="draft">✅ <b>BẢN NHÁP — thầy/cô duyệt trước khi dùng.</b> Chỉ dùng <b>mã HS</b>; họ tên đọc từ file vnEdu chỉ nằm trong trình duyệt máy này. Cách gộp 3 phân môn đặt theo hướng dẫn của trường. Kiểm lại điểm trước khi up vnEdu.</div>
+<div class="tacgia" style="background:linear-gradient(90deg,#eef3ff,#f7f3ff);border-bottom:1px solid #d9d4f0;color:#312e81;padding:7px 20px;font-size:13.5px;text-align:center">👨‍🏫 <b>Phần mềm được phát triển bởi Thầy Tống Phước Khải</b> - Giảng dạy KHTN (phân môn Hóa) - Mọi chi tiết thắc mắc gửi qua Zalo <b>0832325943</b> hoặc mail: <b>phuockhai79@gmail.com</b></div>
+<div id="demoRib" class="demo-rib hidden">DỮ LIỆU THỬ — lớp mẫu, điểm ngẫu nhiên, không phải lớp thật</div>
+<nav class="tabs" id="tabs"></nav>
+<main><div id="view" class="view"></div></main>
+<div id="toast"></div><div id="loiO" class="hidden" role="alert"></div><div id="modal" class="hidden"></div><canvas id="fx"></canvas>
+<script>
+'use strict';
+const GOC_HTML = (() => { const d = document.documentElement.cloneNode(true); d.querySelectorAll('#goiTo').forEach(x => x.remove()); return '<!doctype html>\n' + d.outerHTML; })();
+/* ---- lấy từ Góc Chủ Nhiệm (đã thử) ---- */
+/* ================= TIỆN ÍCH ================= */
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const uid = () => Math.random().toString(36).slice(2, 9) + Date.now().toString(36).slice(-4);
+const sum = a => a.reduce((s, x) => s + x, 0);
+const pad2 = n => String(n).padStart(2, '0');
+const debounce = (f, ms) => { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => f(...a), ms); }; };
+const cap1 = s => s ? s[0].toUpperCase() + s.slice(1) : s;
+const safeName = s => String(s).replace(/[\\/:*?"<>|]+/g, '-').replace(/\s+/g, ' ').trim().slice(0, 110) || 'Goc Chu Nhiem';
+function rng(seed){ let a = seed >>> 0; return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+function getPath(o, p){ return p.split('.').reduce((x, k) => x == null ? x : x[k], o); }
+function setPath(o, p, v){ const ks = p.split('.'); let x = o; for (let i = 0; i < ks.length - 1; i++){ if (x[ks[i]] == null) x[ks[i]] = {}; x = x[ks[i]]; } x[ks[ks.length - 1]] = v; }
+const dt = iso => { const [y, m, d] = iso.split('-').map(Number); return new Date(y, m - 1, d, 12); };
+const isoOf = d => d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate());
+const todayISO = () => isoOf(new Date());
+const addDays = (iso, n) => { const d = dt(iso); d.setDate(d.getDate() + n); return isoOf(d); };
+const vn = iso => { if (!iso) return ''; const [y, m, d] = iso.split('-'); return `${d}/${m}/${y}`; };
+const vnS = iso => { if (!iso) return ''; const [, m, d] = iso.split('-'); return `${d}/${m}`; };
+const THU = ['Chủ nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
+const thu = iso => THU[dt(iso).getDay()];
+function namHocNay(){ const d = new Date(), y = d.getFullYear(); return d.getMonth() >= 7 ? `${y} – ${y + 1}` : `${y - 1} – ${y}`; }
+function tuan1Mac(namHoc){ const y = parseInt(namHoc, 10) || new Date().getFullYear(); const d = new Date(y, 8, 5, 12); const w = d.getDay(); if (w === 0) d.setDate(6); else if (w === 6) d.setDate(7); else d.setDate(5 - (w - 1)); return isoOf(d); }
+/* NĐ 30: ngày dưới 10, tháng 1, 2 thêm số 0 */
+function ngayVN(iso){ const d = dt(iso || todayISO()); const m = d.getMonth() + 1; return `ngày ${pad2(d.getDate())} tháng ${m < 3 ? pad2(m) : m} năm ${d.getFullYear()}`; }
+const pctVN = r => (Math.round(r * 1000) / 10).toLocaleString('vi-VN') + '%';
+const lc1 = s => s ? s[0].toLowerCase() + s.slice(1) : s;
+const ROMAN = ['', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII'];
+
+/* âm phản hồi */
+let AC = null;
+function ding(kind = 'ok'){
+  if (DB && DB.muted) return;
+  try {
+    AC = AC || new (window.AudioContext || window.webkitAudioContext)();
+    const notes = kind === 'ok' ? [660, 880] : kind === 'win' ? [523, 659, 784, 1047] : kind === 'tap' ? [520] : [330, 262];
+    notes.forEach((f, i) => {
+      const o = AC.createOscillator(), g = AC.createGain(), t = AC.currentTime + i * .09;
+      o.type = 'triangle'; o.frequency.value = f; g.gain.setValueAtTime(.0001, t);
+      g.gain.exponentialRampToValueAtTime(.11, t + .02); g.gain.exponentialRampToValueAtTime(.0001, t + .22);
+      o.connect(g); g.connect(AC.destination); o.start(t); o.stop(t + .25);
+    });
+  } catch (e) {}
+}
+/* pháo giấy nhỏ */
+function confetti(x, y, n = 40){
+  const cv = $('#fx'), ctx = cv.getContext('2d'); cv.width = innerWidth; cv.height = innerHeight;
+  const cols = ['#4f46e5', '#f97316', '#16a34a', '#facc15', '#db2777', '#0d9488'];
+  const ps = Array.from({ length: n }, () => ({ x: x ?? innerWidth / 2, y: y ?? innerHeight / 3, vx: (Math.random() - .5) * 9, vy: -Math.random() * 8 - 2, c: cols[Math.floor(Math.random() * cols.length)], s: 4 + Math.random() * 5, r: Math.random() * 6 }));
+  let f = 0;
+  (function step(){
+    ctx.clearRect(0, 0, cv.width, cv.height);
+    ps.forEach(p => { p.x += p.vx; p.y += p.vy; p.vy += .32; p.r += .2; ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.r); ctx.fillStyle = p.c; ctx.fillRect(-p.s / 2, -p.s / 4, p.s, p.s / 2); ctx.restore(); });
+    if (++f < 70) requestAnimationFrame(step); else ctx.clearRect(0, 0, cv.width, cv.height);
+  })();
+}
+function floatAt(el, text, color){
+  if (!el) return; const r = el.getBoundingClientRect(), d = document.createElement('div');
+  d.className = 'float'; d.textContent = text; d.style.color = color; d.style.left = (r.left + r.width / 2 - 12) + 'px'; d.style.top = (r.top + 4) + 'px';
+  document.body.appendChild(d); setTimeout(() => d.remove(), 1000);
+}
+function toast(msg, kind = '', act){
+  const d = document.createElement('div'); d.className = 'tst ' + kind; d.innerHTML = `<span>${msg}</span>`;
+  if (act){ const b = document.createElement('button'); b.textContent = act.label; b.onclick = () => { act.fn(); d.remove(); }; d.appendChild(b); }
+  $('#toast').appendChild(d); setTimeout(() => d.remove(), act ? 7000 : 3600);
+}
+function modal(html, buttons, collect){
+  return new Promise(res => {
+    const m = $('#modal'); m.classList.remove('hidden');
+    m.innerHTML = `<div class="mbox">${html}<div class="mbtns">${buttons.map((b, i) => `<button class="btn ${b.cls || ''}" data-mi="${i}">${b.label}</button>`).join('')}</div></div>`;
+    const close = v => { const d = collect ? collect() : null; m.classList.add('hidden'); m.innerHTML = ''; m.onclick = null; res(collect ? { v, d } : v); };
+    m.onclick = e => { const b = e.target.closest('[data-mi]'); if (b) close(buttons[+b.dataset.mi].v); else if (e.target === m) close(null); };
+  });
+}
+function download(blob, name){
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name;
+  document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 5000);
+}
+async function copyText(t){
+  try { await navigator.clipboard.writeText(t); return true; } catch (e) {
+    try { const ta = document.createElement('textarea'); ta.value = t; ta.style.cssText = 'position:fixed;opacity:0'; document.body.appendChild(ta); ta.select(); const ok = document.execCommand('copy'); ta.remove(); return ok; } catch (e2) { return false; }
+  }
+}
+
+/* ---- lấy từ Góc Chủ Nhiệm (đã thử) ---- */
+const CRC_T = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++){ let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
+function crc32(u){ let c = 0xFFFFFFFF; for (let i = 0; i < u.length; i++) c = CRC_T[(c ^ u[i]) & 255] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; }
+async function deflate(u){
+  if (!window.CompressionStream) return null;
+  try { return new Uint8Array(await new Response(new Blob([u]).stream().pipeThrough(new CompressionStream('deflate-raw'))).arrayBuffer()); } catch (e) { return null; }
+}
+async function zipFiles(files, mime){
+  const enc = new TextEncoder(), parts = [], cd = []; let off = 0;
+  for (const f of files){
+    const raw = typeof f.data === 'string' ? enc.encode(f.data) : f.data, nm = enc.encode(f.name), crc = crc32(raw);
+    const z = await deflate(raw), method = z && z.length < raw.length ? 8 : 0, data = method ? z : raw;
+    const lh = new DataView(new ArrayBuffer(30));
+    lh.setUint32(0, 0x04034b50, true); lh.setUint16(4, 20, true); lh.setUint16(6, 0x0800, true); lh.setUint16(8, method, true);
+    lh.setUint16(10, 0, true); lh.setUint16(12, 0x21, true); lh.setUint32(14, crc, true); lh.setUint32(18, data.length, true);
+    lh.setUint32(22, raw.length, true); lh.setUint16(26, nm.length, true); lh.setUint16(28, 0, true);
+    parts.push(new Uint8Array(lh.buffer), nm, data);
+    const ch = new DataView(new ArrayBuffer(46));
+    ch.setUint32(0, 0x02014b50, true); ch.setUint16(4, 20, true); ch.setUint16(6, 20, true); ch.setUint16(8, 0x0800, true);
+    ch.setUint16(10, method, true); ch.setUint16(12, 0, true); ch.setUint16(14, 0x21, true); ch.setUint32(16, crc, true);
+    ch.setUint32(20, data.length, true); ch.setUint32(24, raw.length, true); ch.setUint16(28, nm.length, true); ch.setUint32(42, off, true);
+    cd.push(new Uint8Array(ch.buffer), nm); off += 30 + nm.length + data.length;
+  }
+  const cds = sum(cd.map(a => a.length)), e = new DataView(new ArrayBuffer(22));
+  e.setUint32(0, 0x06054b50, true); e.setUint16(8, files.length, true); e.setUint16(10, files.length, true); e.setUint32(12, cds, true); e.setUint32(16, off, true);
+  return new Blob([...parts, ...cd, new Uint8Array(e.buffer)], { type: mime });
+}
+const xesc = s => String(s ?? '').replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
+/* ---- lấy từ Góc Chủ Nhiệm (đã thử) ---- */
+const colName = i => { let s = ''; i++; while (i){ const m = (i - 1) % 26; s = String.fromCharCode(65 + m) + s; i = Math.floor((i - 1) / 26); } return s; };
+async function buildXlsx(sheets){
+  const sx = sheets.map((sh, si) => {
+    const rows = sh.rows.map((r, ri) => `<row r="${ri + 1}">${r.map((v, ci) => {
+      const o = v && typeof v === 'object' ? v : { v }, ref = colName(ci) + (ri + 1);
+      const s = o.s ?? (ri < (sh.head ?? 1) ? 1 : 2);
+      if (o.v === '' || o.v == null) return `<c r="${ref}" s="${s}"/>`;
+      if (typeof o.v === 'number' && isFinite(o.v)) return `<c r="${ref}" s="${s}"><v>${o.v}</v></c>`;
+      return `<c r="${ref}" s="${s}" t="inlineStr"><is><t xml:space="preserve">${xesc(o.v)}</t></is></c>`;
+    }).join('')}</row>`).join('');
+    const cols = (sh.cols || []).map((w, i) => `<col min="${i + 1}" max="${i + 1}" width="${w}" customWidth="1"/>`).join('');
+    const merges = (sh.merges || []).length ? `<mergeCells count="${sh.merges.length}">${sh.merges.map(m => `<mergeCell ref="${m}"/>`).join('')}</mergeCells>` : '';
+    return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetViews><sheetView workbookViewId="0">${sh.freeze ? `<pane ySplit="${sh.freeze}" topLeftCell="A${sh.freeze + 1}" activePane="bottomLeft" state="frozen"/>` : ''}</sheetView></sheetViews>${cols ? `<cols>${cols}</cols>` : ''}<sheetData>${rows}</sheetData>${merges}</worksheet>`;
+  });
+  const nm = sh => sh.name.replace(/[\[\]:*?\/\\]/g, '-').slice(0, 31);
+  const wb = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets>${sheets.map((sh, i) => `<sheet name="${xesc(nm(sh))}" sheetId="${i + 1}" r:id="rId${i + 1}"/>`).join('')}</sheets></workbook>`;
+  const wrels = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${sheets.map((s, i) => `<Relationship Id="rId${i + 1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet${i + 1}.xml"/>`).join('')}<Relationship Id="rId${sheets.length + 1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>`;
+  const styles = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><fonts count="3"><font><sz val="12"/><name val="Times New Roman"/></font><font><b/><sz val="12"/><name val="Times New Roman"/></font><font><b/><sz val="14"/><name val="Times New Roman"/></font></fonts><fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FFE7E6F5"/><bgColor indexed="64"/></patternFill></fill></fills><borders count="2"><border><left/><right/><top/><bottom/><diagonal/></border><border><left style="thin"><color auto="1"/></left><right style="thin"><color auto="1"/></right><top style="thin"><color auto="1"/></top><bottom style="thin"><color auto="1"/></bottom><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="5"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="0" fontId="1" fillId="2" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf><xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0" applyBorder="1" applyAlignment="1"><alignment vertical="center" wrapText="1"/></xf><xf numFmtId="0" fontId="2" fillId="0" borderId="0" xfId="0" applyFont="1"/><xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf></cellXfs></styleSheet>`;
+  const ct = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>${sheets.map((s, i) => `<Override PartName="/xl/worksheets/sheet${i + 1}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>`).join('')}</Types>`;
+  const rels = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>`;
+  return zipFiles([{ name: '[Content_Types].xml', data: ct }, { name: '_rels/.rels', data: rels }, { name: 'xl/workbook.xml', data: wb }, { name: 'xl/_rels/workbook.xml.rels', data: wrels }, { name: 'xl/styles.xml', data: styles },
+    ...sx.map((x, i) => ({ name: `xl/worksheets/sheet${i + 1}.xml`, data: x }))], 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+}
+/* đầu bảng Excel: 2 dòng tiêu đề + 1 dòng trống */
+
+/* ---- lấy từ Góc Chủ Nhiệm (đã thử) ---- */
+function owlSVG(size = 110, mood = 'vui'){
+  return `<svg class="mascot" width="${size}" height="${size}" viewBox="0 0 120 120" aria-hidden="true">
+  <ellipse cx="60" cy="112" rx="30" ry="5" fill="rgba(0,0,0,.12)"/>
+  <path d="M30 40 L38 22 L48 36 Z M90 40 L82 22 L72 36 Z" fill="#6d28d9"/>
+  <ellipse cx="60" cy="68" rx="34" ry="40" fill="url(#gOwl)"/>
+  <ellipse cx="60" cy="80" rx="22" ry="25" fill="url(#gBelly)"/>
+  <path d="M50 74q4 4 8 0M62 84q4 4 8 0M50 92q4 4 8 0" stroke="#f59e0b" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <circle cx="46" cy="52" r="13" fill="#fff"/><circle cx="74" cy="52" r="13" fill="#fff"/>
+  <circle cx="47" cy="53" r="6" fill="#1e1b4b"/><circle cx="73" cy="53" r="6" fill="#1e1b4b"/>
+  <circle cx="49" cy="51" r="2" fill="#fff"/><circle cx="75" cy="51" r="2" fill="#fff"/>
+  <path d="M55 62 L60 70 L65 62 Z" fill="#f97316"/>
+  ${mood === 'vui' ? '<circle cx="36" cy="64" r="4" fill="#f9a8d4" opacity=".7"/><circle cx="84" cy="64" r="4" fill="#f9a8d4" opacity=".7"/>' : ''}
+  <path d="M26 72q-8 14 4 26M94 72q8 14 -4 26" stroke="#4338ca" stroke-width="7" fill="none" stroke-linecap="round"/>
+  <rect x="34" y="14" width="52" height="8" rx="2" fill="#1e1b4b" transform="rotate(-6 60 18)"/>
+  <path d="M60 4 L92 14 L60 24 L28 14 Z" fill="#312e81"/>
+  <path d="M88 14 L90 30" stroke="#facc15" stroke-width="2"/><circle cx="90" cy="32" r="3" fill="#facc15"/>
+  </svg>`;
+}
+function donutSVG(parts, size = 170, center = '', sub = ''){
+  const R0 = 62, C = 2 * Math.PI * R0, tot = sum(parts.map(p => p.v)) || 1; let off = 0;
+  const segs = parts.filter(p => p.v > 0).map(p => { const L = p.v / tot * C, s = `<circle cx="80" cy="80" r="${R0}" fill="none" stroke="${p.c}" stroke-width="20" stroke-dasharray="${L} ${C - L}" stroke-dashoffset="${-off}" transform="rotate(-90 80 80)"><title>${esc(p.l)}: ${p.v}</title></circle>`; off += L; return s; }).join('');
+  return `<svg width="${size}" height="${size}" viewBox="0 0 160 160" role="img" aria-label="${esc(center)}"><circle cx="80" cy="80" r="${R0}" fill="none" stroke="#eef0f6" stroke-width="20"/>${segs}<text x="80" y="80" text-anchor="middle" font-size="26" font-weight="800" fill="#1e2433">${esc(center)}</text><text x="80" y="100" text-anchor="middle" font-size="12" fill="#667085">${esc(sub)}</text></svg>`;
+}
+function barsSVG(items, h = 190){
+  /* items: [{l, v, c}] — cột dương/âm */
+  const n = items.length || 1, W = Math.max(300, n * 70), max = Math.max(1, ...items.map(i => Math.abs(i.v))), hasNeg = items.some(i => i.v < 0);
+  const base = hasNeg ? h * .62 : h - 34, sc = (hasNeg ? h * .45 : h - 64) / max, bw = Math.min(46, W / n * .55);
+  const bars = items.map((it, i) => {
+    const x = (i + .5) * W / n, bh = Math.abs(it.v) * sc, y = it.v >= 0 ? base - bh : base;
+    return `<rect x="${x - bw / 2}" y="${y}" width="${bw}" height="${Math.max(2, bh)}" rx="7" fill="${it.c || 'url(#gBar)'}"/>
+      <text x="${x}" y="${it.v >= 0 ? y - 6 : y + bh + 15}" text-anchor="middle" font-size="14" font-weight="800" fill="#1e2433">${it.v > 0 ? '+' : ''}${it.v}</text>
+      <text x="${x}" y="${h - 8}" text-anchor="middle" font-size="12.5" fill="#475467">${esc(it.l)}</text>`;
+  }).join('');
+  return `<svg class="sv" viewBox="0 0 ${W} ${h}" role="img"><line x1="0" x2="${W}" y1="${base}" y2="${base}" stroke="#d0d5dd"/>${bars}</svg>`;
+}
+
+/* ---- lấy từ Góc Chủ Nhiệm (đã thử) ---- */
+async function inflateRaw(u){ return new Uint8Array(await new Response(new Blob([u]).stream().pipeThrough(new DecompressionStream('deflate-raw'))).arrayBuffer()); }
+async function unzipAll(buf){
+  const dv = new DataView(buf); let e = buf.byteLength - 22; while (e >= 0 && dv.getUint32(e, true) !== 0x06054b50) e--;
+  if (e < 0) throw new Error('không phải file .xlsx');
+  const n = dv.getUint16(e + 10, true); let p = dv.getUint32(e + 16, true); const out = [];
+  for (let i = 0; i < n; i++){
+    if (dv.getUint32(p, true) !== 0x02014b50) break;
+    const method = dv.getUint16(p + 10, true), csize = dv.getUint32(p + 20, true), nl = dv.getUint16(p + 28, true), xl = dv.getUint16(p + 30, true), cl = dv.getUint16(p + 32, true), lho = dv.getUint32(p + 42, true);
+    const name = new TextDecoder().decode(new Uint8Array(buf, p + 46, nl)); p += 46 + nl + xl + cl;
+    if (name.endsWith('/')) continue;
+    const start = lho + 30 + dv.getUint16(lho + 26, true) + dv.getUint16(lho + 28, true);
+    let data = new Uint8Array(buf.slice(start, start + csize));
+    if (method === 8) data = await inflateRaw(data); else if (method !== 0) throw new Error('file nén kiểu lạ — mở bằng Excel, lưu lại rồi thử');
+    out.push({ name, data });
+  }
+  return out;
+}
+const colIdx = s => [...s.toUpperCase()].reduce((n, ch) => n * 26 + ch.charCodeAt(0) - 64, 0) - 1;
+async function readXlsxRows(buf){
+  const files = await unzipAll(buf), get = n => files.find(f => f.name.toLowerCase() === n.toLowerCase()), td = new TextDecoder();
+  const X = f => new DOMParser().parseFromString(td.decode(f.data), 'application/xml');
+  const ssf = get('xl/sharedStrings.xml'), ss = ssf ? [...X(ssf).getElementsByTagName('si')].map(si => [...si.getElementsByTagName('t')].map(t => t.textContent).join('')) : [];
+  let path = 'xl/worksheets/sheet1.xml';
+  try { const sh = X(get('xl/workbook.xml')).getElementsByTagName('sheet')[0], rid = sh.getAttribute('r:id'); for (const r of X(get('xl/_rels/workbook.xml.rels')).getElementsByTagName('Relationship')) if (r.getAttribute('Id') === rid){ const t = r.getAttribute('Target'); path = t.startsWith('/') ? t.slice(1) : 'xl/' + t.replace(/^\.\//, ''); } } catch (e) {}
+  const sx = get(path) || files.find(f => /^xl\/worksheets\/sheet\d+\.xml$/i.test(f.name)); if (!sx) throw new Error('không thấy trang tính trong file');
+  const rows = [];
+  for (const r of X(sx).getElementsByTagName('row')){
+    const ri = (+r.getAttribute('r') || rows.length + 1) - 1, row = rows[ri] = rows[ri] || [];
+    for (const ce of r.getElementsByTagName('c')){
+      const col = colIdx((ce.getAttribute('r') || '').replace(/\d+/g, '')), t = ce.getAttribute('t'), v = ce.getElementsByTagName('v')[0];
+      let val = ''; if (t === 's') val = ss[+(v && v.textContent)] ?? ''; else if (t === 'inlineStr') val = [...ce.getElementsByTagName('t')].map(x => x.textContent).join(''); else if (v) val = t === 'str' || t === 'e' ? v.textContent : (v.textContent !== '' && isFinite(+v.textContent) ? +v.textContent : v.textContent);
+      if (col >= 0) row[col] = val;
+    }
+  }
+  return Array.from(rows, r => Array.from(r || [], x => x ?? ''));
+}
+
+
+/* ================= DỮ LIỆU ================= */
+const KEY = 'dkhtn_v1', KEYTEN = 'dkhtn_ten';
+const LS = {
+  get(k, d){ try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } },
+  set(k, v){ try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { toast('Bộ nhớ trình duyệt đầy hoặc bị chặn — bấm 💾 Sao lưu ngay', 'bad'); return false; } }
+};
+let DB = LS.get(KEY, null) || { v: 1, cur: null, classes: {}, muted: false };
+let TEN = LS.get(KEYTEN, {});
+let CHUP = false;
+function save(){ if (!CHUP) LS.set(KEY, DB); }
+const saveSoon = debounce(save, 300);
+// đóng tab / tắt máy ngay sau khi gõ: lưu luôn ô vừa gõ
+addEventListener('pagehide', () => save()); document.addEventListener('visibilitychange', () => { if (document.hidden) save(); });
+const cls = () => DB.classes[DB.cur] || null;
+const PM = [['li', 'Vật lí', '#2563eb', '⚡'], ['hoa', 'Hoá học', '#db2777', '⚗️'], ['sinh', 'Sinh học', '#16a34a', '🌿']];
+const PMID = PM.map(p => p[0]), pmOf = id => PM.find(p => p[0] === id) || PM[0];
+const HKTEN = { HK1: 'Học kì I', HK2: 'Học kì II' };
+const r1 = x => Math.round(x * 10 + 1e-9) / 10;
+const fmt = v => v == null || v === '' ? '' : (+v).toLocaleString('vi-VN', { maximumFractionDigits: 2 });
+const num = v => v === '' || v == null || isNaN(+v) ? null : +v;
+const tenOf = (c, ma) => (TEN[c.id] || {})[ma] || '';
+const lab = (c, ma) => c.hienTen && tenOf(c, ma) ? `${ma} · ${tenOf(c, ma)}` : ma;
+function namHocNay(){ const d = new Date(), y = d.getFullYear(); return d.getMonth() >= 7 ? `${y} – ${y + 1}` : `${y - 1} – ${y}`; }
+function cfgMacDinh(){ return { soTX: 4, txPM: ['li', 'hoa', 'sinh', 'li'], kieu: 'phan', phanMax: { li: 4, hoa: 3, sinh: 3 }, tb: { li: 1, hoa: 1, sinh: 1 }, heSo: { gk: 2, ck: 3, hk2: 2 } }; }
+function lopMoi(o){ return { id: Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4), ten: o.ten || 'Lớp mới', khoi: +o.khoi || 8, namHoc: namHocNay(), hs: Array.from({ length: +o.siSo || 0 }, (_, i) => ({ ma: 'HS' + pad2(i + 1) })), cfg: cfgMacDinh(), d: { HK1: {}, HK2: {} }, hienTen: false, nhan: [] }; }
+function sua(c){ const m = cfgMacDinh(); c.cfg = c.cfg || m; for (const k in m) if (c.cfg[k] == null) c.cfg[k] = m[k]; c.d = c.d || {}; c.d.HK1 = c.d.HK1 || {}; c.d.HK2 = c.d.HK2 || {}; c.nhan = c.nhan || []; c.hs = c.hs || []; while (c.cfg.txPM.length < c.cfg.soTX) c.cfg.txPM.push('li'); return c; }
+const dong = (c, hk, ma) => { const D = c.d[hk]; const r = (D[ma] = D[ma] || {}); r.tx = r.tx || []; r.gk = r.gk || {}; r.ck = r.ck || {}; return r; };
+const dongXem = (c, hk, ma) => (c.d[hk] || {})[ma] || { tx: [], gk: {}, ck: {} };
+const maxPhan = (c, pm) => c.cfg.kieu === 'phan' ? (+c.cfg.phanMax[pm] || 0) : 10;
+/* điểm KHTN của một em: ĐĐGtx theo cột, ĐĐGgk/ĐĐGck gộp 3 phân môn, ĐTBmhk tham khảo */
+function ketQua(c, hk, ma){
+  const r = dongXem(c, hk, ma), cf = c.cfg;
+  const tx = Array.from({ length: cf.soTX }, (_, i) => num((r.tx || [])[i]));
+  const ghep = o => {
+    const v = PMID.map(p => num((o || {})[p])), thieu = PMID.filter((p, i) => v[i] == null);
+    if (thieu.length) return { v: null, thieu };
+    if (cf.kieu === 'phan') return { v: r1(sum(v)), thieu };
+    const w = PMID.map(p => +cf.tb[p] || 0), tw = sum(w); return { v: tw ? r1(sum(v.map((x, i) => x * w[i])) / tw) : null, thieu };
+  };
+  const gk = ghep(r.gk), ck = ghep(r.ck);
+  const tb = tx.every(x => x != null) && gk.v != null && ck.v != null ? r1((sum(tx) + cf.heSo.gk * gk.v + cf.heSo.ck * ck.v) / (tx.length + cf.heSo.gk + cf.heSo.ck)) : null;
+  return { tx, gk, ck, tb };
+}
+function tbCaNam(c, ma){ const a = ketQua(c, 'HK1', ma).tb, b = ketQua(c, 'HK2', ma).tb, h = +c.cfg.heSo.hk2 || 2; return a != null && b != null ? r1((a + h * b) / (1 + h)) : null; }
+/* số ô một phân môn phải nhập / đã nhập trong một học kì */
+function tienDo(c, hk, pm){
+  const cols = [...c.cfg.txPM.slice(0, c.cfg.soTX).map((p, i) => p === pm ? ['tx', i] : null).filter(Boolean), ['gk', pm], ['ck', pm]];
+  let co = 0; c.hs.forEach(h => { const r = dongXem(c, hk, h.ma); cols.forEach(([k, x]) => { const v = k === 'tx' ? (r.tx || [])[x] : (r[k] || {})[x]; if (num(v) != null) co++; }); });
+  return { co, tong: cols.length * c.hs.length };
+}
+function canhBaoCfg(c){
+  const w = [], cf = c.cfg;
+  if (cf.kieu === 'phan'){ const t = sum(PMID.map(p => +cf.phanMax[p] || 0)); if (Math.abs(t - 10) > 1e-9) w.push(`Tổng điểm tối đa 3 phần đang là ${fmt(t)} — đề chung thang 10 thì tổng phải bằng 10.`); }
+  else if (!sum(PMID.map(p => +cf.tb[p] || 0))) w.push('Trọng số 3 phân môn đang bằng 0.');
+  PMID.forEach(p => { if (!cf.txPM.slice(0, cf.soTX).includes(p)) w.push(`Chưa có cột ĐĐGtx nào giao cho ${pmOf(p)[1]}.`); });
+  if (cf.kieu === 'phan') PMID.forEach(p => { const mx = +cf.phanMax[p] || 0; let n = 0; ['HK1', 'HK2'].forEach(hk => c.hs.forEach(h => { const r = dongXem(c, hk, h.ma); ['gk', 'ck'].forEach(k => { if (num((r[k] || {})[p]) > mx) n++; }); })); if (n) w.push(`${n} ô điểm ${pmOf(p)[1]} đã nhập lớn hơn tối đa ${fmt(mx)} vừa khai báo — kiểm lại khai báo hoặc sửa điểm ở thẻ ✍️ (ô tô đỏ).`); });
+  return w;
+}
+
+/* ================= KHUNG ================= */
+const TABS = [['lop', '🏫', 'Lớp & cách tính'], ['nhap', '✍️', 'Nhập điểm'], ['tong', '🧮', 'Tổng hợp KHTN'], ['gui', '📤', 'Gửi / nhận điểm'], ['vnedu', '📗', 'File vnEdu']];
+const UI = { tab: 'nhap', hk: 'HK1', pm: 'hoa', mau: null, cot: LS.get('dkhtn_cot', 'all') };
+const VIEW = {};
+function renderTop(){
+  const s = $('#clsSel'), ids = Object.keys(DB.classes);
+  s.innerHTML = ids.length ? ids.map(id => { const c = DB.classes[id]; return `<option value="${id}" ${id === DB.cur ? 'selected' : ''}>Lớp ${esc(c.ten)} · khối ${c.khoi}${c.demo ? ' (mẫu)' : ''}</option>`; }).join('') : '<option>— chưa có lớp —</option>';
+  $('#muteBtn').textContent = DB.muted ? '🔇' : '🔈'; $('#demoRib').classList.toggle('hidden', !(cls() && cls().demo));
+}
+function render(giu = true){
+  const y = scrollY; renderTop(); const lo = $('#loiO'); if (lo) lo.classList.add('hidden');
+  document.body.classList.toggle('gv', !!DB.tuGoi); if (DB.tuGoi && UI.tab === 'vnedu') UI.tab = 'nhap';
+  $('#tabs').innerHTML = cls() ? TABS.filter(t => !DB.tuGoi || t[0] !== 'vnedu').map(([id, ic, l]) => `<button class="tab ${UI.tab === id ? 'on' : ''}" data-act="tab" data-id="${id}"><span class="ic">${ic}</span><span class="lb">${l}</span></button>`).join('') : '';
+  const v = $('#view'); v.innerHTML = cls() ? VIEW[UI.tab](cls()) : chao();
+  if (!giu){ v.classList.remove('view'); void v.offsetWidth; v.classList.add('view'); scrollTo(0, 0); } else scrollTo(0, y);
+}
+const card = (ic, t, body, rt = '', sub = '') => `<section class="card"><h2><span class="n">${ic}</span>${t}${rt ? `<span class="rt">${rt}</span>` : ''}</h2>${sub ? `<p class="sub">${sub}</p>` : ''}${body}</section>`;
+const fld = (l, inner, st = '') => `<label class="fld"${st ? ` style="${st}"` : ''}>${l}${inner}</label>`;
+const hkSeg = () => `<span class="seg">${['HK1', 'HK2'].map(k => `<button class="${UI.hk === k ? 'on' : ''}" data-act="hk" data-v="${k}">${HKTEN[k]}</button>`).join('')}</span>`;
+function chao(){
+  if (UI.goiLoi) return `<section class="card welcome"><h2>🔗 ${UI.goiLoi === 'saiKhoa' ? 'Link không đúng hoặc người tổng hợp đã đổi khoá' : 'Mở bằng đúng link người tổng hợp gửi'}</h2><p class="muted">${UI.goiLoi === 'saiKhoa' ? 'Xin người tổng hợp gửi lại link mới nhất rồi bấm vào link đó.' : 'Link đúng có đoạn <b>#k=…</b> ở cuối. Bấm thẳng vào link trong tin nhắn Zalo (đừng gõ lại địa chỉ).'}</p></section>`;
+  return `<section class="card welcome"><svg width="150" height="130" viewBox="0 0 150 130" aria-hidden="true">
+    <path d="M55 10h40v10h-6v28l30 52a12 12 0 0 1-10 18H31a12 12 0 0 1-10-18l30-52V20h-6z" fill="#e0f2fe" stroke="#0f766e" stroke-width="4"/>
+    <path d="M36 86h78l9 16a6 6 0 0 1-5 9H32a6 6 0 0 1-5-9z" fill="#5eead4"/><circle cx="62" cy="96" r="5" fill="#fff" opacity=".8"/><circle cx="85" cy="100" r="3.5" fill="#fff" opacity=".8"/>
+    <text x="22" y="50" font-size="22">⚡</text><text x="112" y="44" font-size="22">🌿</text><text x="64" y="72" font-size="20">⚗️</text></svg>
+    <h2>Lí + Hoá + Sinh = điểm KHTN, gọn trong một bảng</h2>
+    <p class="muted">Mỗi thầy cô phân môn nhập phần mình → app tự cộng/tính ra ĐĐGtx, ĐĐGgk, ĐĐGck của KHTN → điền thẳng vào file mẫu Excel tải từ vnEdu để up lại.</p>
+    <div class="row" style="justify-content:center;margin-top:14px"><button class="btn pri big" data-act="lopMoi">＋ Tạo lớp</button><button class="btn big" data-act="lopMau">👀 Thử lớp mẫu 8A</button></div></section>${dsCard()}`;
+}
+
+/* ================= 🏫 LỚP & CÁCH TÍNH ================= */
+/* ---- nạp danh sách lớp (có họ tên) — mỗi trang một lớp; họ tên chỉ lưu trong trình duyệt máy này ---- */
+const lopTheoTen = ten => { const k = khoaLop(ten); return Object.values(DB.classes).find(c => k ? khoaLop(c.ten) === k : c.ten.trim().toLowerCase() === String(ten).trim().toLowerCase()) || null; };
+const dsKqHint = () => { const k = UI.dsKq; return `<div class="hint ok" style="margin:10px 0 0">✔ Đã nạp «${esc(k.file)}»: ${k.moi ? `tạo <b>${k.moi}</b> lớp mới` : ''}${k.moi && k.cu ? ', ' : ''}${k.cu ? `cập nhật <b>${k.cu}</b> lớp` : ''} — ${k.lops.map(t => `<span class="pill">${esc(t)}</span>`).join(' ')}
+    ${k.giu.map(t => `<br>⚠️ ${esc(t)}`).join('')}
+    <div class="row" style="margin-top:6px"><button class="btn sm" data-act="dsHoanTac">↩ Hoàn tác lần nạp này</button><button class="btn sm" data-act="dsDong">Đóng</button><span class="small muted">Tên lớp sai → sửa ở thẻ 🏫 «Tên lớp».</span></div></div>`; };
+function dsCard(){
+  const coLop = Object.values(DB.classes).filter(x => !x.demo).length;
+  let body = `<p class="sub" style="margin:0 0 10px">Up <b>đúng file Excel tải từ vnEdu</b> (VD «Sổ điểm các môn tôi dạy» — mỗi lớp một trang, có cột Họ và tên, ĐĐGgk, ĐĐGck). App tạo đủ các lớp có họ tên và <b>giữ file trên máy này</b>: em nào nhập đủ 3 phân môn là điểm KHTN <b>tự vào đúng ô</b> giữa kì / cuối kì của file → bấm <b>⬇ Tải file vnEdu</b> rồi up lại. File không đúng mẫu vnEdu: app không nhận.</p>
+    <label class="drop" id="dsDrop"><div style="font-size:32px">📗</div><b>Kéo thả file vnEdu (.xlsx) vào đây</b><br><span class="muted small">hoặc bấm để chọn · họ tên chỉ đọc và giữ trên trình duyệt máy này</span><input type="file" id="dsFile" accept=".xlsx,.xlsm" class="hidden"></label>`;
+  if (VN) body += `<div class="hint info" style="margin:10px 0 0">📗 Đang dùng file <b>«${esc(VN.ten)}»</b> · ${HKTEN[VN.hk]} · nạp lúc ${esc(VN.luc)} <button class="btn sm" data-act="taiVnEdu">⬇ Tải file vnEdu đã điền</button> <button class="btn sm bad" data-act="vnXoa" data-khong-bam>🗑 Xoá file khỏi máy</button></div>`;
+  if (UI.dsKq) body += dsKqHint();
+  else if (!coLop) body += '<div class="hint info">💡 Chưa có lớp nào: up file vnEdu ở đây — app tạo đủ các lớp một lần.</div>';
+  return card('📗', 'File vnEdu của các lớp (có họ tên học sinh)', body);
+}
+const coSo = o => o != null && (typeof o === 'object' ? Object.values(o).some(coSo) : num(o) != null);
+const chuanTen = t => String(t || '').normalize('NFC').toLowerCase().replace(/\s+/g, ' ').trim();
+function apDungDs(d){
+  const kq = { moi: 0, cu: 0, lops: [], giu: [], dau: null };
+  Object.entries(d.chon).filter(([, v]) => v).forEach(([k]) => {
+    const x = d.sheets[+k], ten = String(d.ten[k] || x.name).trim().toUpperCase(); if (!ten) return;
+    const ds = x.ds.map(ri => tenDong(x, ri).replace(/\d{6,}/g, '').trim()), maMoi = i => 'HS' + pad2(i + 1);
+    let c = lopTheoTen(ten);
+    if (!c){ const kh = +((khoaLop(ten).match(/^\d+/) || [])[0]) || 8; c = sua(lopMoi({ ten, khoi: kh === 9 ? 9 : 8, siSo: 0 })); DB.classes[c.id] = c; kq.moi++; }
+    else {
+      const cu = TEN[c.id] || {}, coDiem = ma => Object.values(c.d || {}).some(h => coSo((h || {})[ma]));
+      let doi = null;
+      if (Object.keys(cu).length){ // đã có họ tên: ghép theo họ tên, không theo thứ tự
+        const hang = {}; ds.forEach((t, i) => (hang[chuanTen(t)] = hang[chuanTen(t)] || []).push(maMoi(i)));
+        doi = {}; const mat = [];
+        c.hs.forEach(h => { const q = hang[chuanTen(cu[h.ma])]; if (q && q.length) doi[h.ma] = q.shift(); else if (coDiem(h.ma)) mat.push(h.ma); });
+        if (mat.length){ kq.giu.push(`Lớp ${c.ten}: ${mat.length} em đang có điểm (${mat.join(', ')}) không thấy trong file — giữ nguyên danh sách cũ của lớp này`); return; }
+      } else { const mat = c.hs.slice(ds.length).filter(h => coDiem(h.ma)).map(h => h.ma);
+        if (mat.length){ kq.giu.push(`Lớp ${c.ten}: file ít em hơn, ${mat.join(', ')} đang có điểm — giữ nguyên danh sách cũ của lớp này`); return; } }
+      if (doi) Object.keys(c.d || {}).forEach(hk => { const cuD = c.d[hk] || {}, moiD = {}; Object.entries(doi).forEach(([a, b]) => { if (cuD[a]) moiD[b] = cuD[a]; }); c.d[hk] = moiD; });
+      kq.cu++;
+    }
+    c.hs = ds.map((_, i) => ({ ma: maMoi(i) })); TEN[c.id] = {}; ds.forEach((t, i) => TEN[c.id][maMoi(i)] = t); c.hienTen = true;
+    kq.lops.push(c.ten + ' · ' + ds.length + ' em'); kq.dau = kq.dau || c;
+  });
+  return kq;
+}
+/* ---- file vnEdu giữ trên máy: điền tự động điểm KHTN khi đủ 3 phân môn ---- */
+const KEYVN = 'dkhtn_vnedu';
+let VN = null; // { ten, hk, luc, b64 } — chỉ trong trình duyệt máy này, không vào bản sao lưu
+const doanHK = t => { t = String(t || '').toLowerCase(); return /h[oọ]c\s*k[iìỳy]\s*(ii|2)\b|\bhk\s*(ii|2)\b/.test(t) ? 'HK2' : /h[oọ]c\s*k[iìỳy]\s*(i|1)\b|\bhk\s*(i|1)\b/.test(t) ? 'HK1' : null; };
+const b64Tu = u => { let x = ''; for (let i = 0; i < u.length; i += 0x8000) x += String.fromCharCode.apply(null, u.subarray(i, i + 0x8000)); return btoa(x); };
+const fileVN = () => { const x = atob(VN.b64), u = new Uint8Array(x.length); for (let i = 0; i < x.length; i++) u[i] = x.charCodeAt(i); return new File([u], VN.ten); };
+function kiemMau(d){
+  const kh = d.sheets.filter(x => laKHTN(x) && x.ds.length), loi = [];
+  if (!kh.length) return ['Không thấy trang môn <b>Khoa học tự nhiên</b> nào có cột «Họ và tên», ĐĐGgk, ĐĐGck và danh sách học sinh.'];
+  kh.forEach(x => { const m = doCot({ cfg: { soTX: 8 } }, x), thieu = [m.gk == null && 'cột ĐĐGgk (giữa kì)', m.ck == null && 'cột ĐĐGck (cuối kì)', !x.lop && 'tên lớp (VD 8A1)'].filter(Boolean); if (thieu.length) loi.push(`Trang «${esc(x.name)}»: không thấy ${thieu.join(', ')}`); });
+  return loi;
+}
+async function napDanhSach(f){
+  if (/\.xls$/i.test(f.name)) return toast('File .xls đời cũ: mở bằng Excel → «Lưu thành» .xlsx rồi kéo vào lại', 'warn');
+  let d; try { d = await docExcel(f); } catch (e) { return toast('Không đọc được file: ' + esc(e.message), 'bad'); }
+  const loi = kiemMau(d);
+  if (loi.length){ ding('bad'); return modal(`<h3>⛔ File «${esc(f.name)}» không đúng mẫu vnEdu</h3><p>${loi.join('<br>')}</p><p><b>Cách lấy đúng file:</b> đăng nhập vnEdu → sổ điểm môn <b>Khoa học tự nhiên</b> (VD «Sổ điểm các môn tôi dạy») → <b>tải file Excel</b> → up nguyên file đó vào đây, <b>không sửa, không đổi tên trang, không lưu thành .xls</b>.</p>`, [{ label: 'Đã hiểu — up lại file đúng', v: 1, cls: 'pri' }]); }
+  const tr = d.sheets.map((x, i) => [x, i]).filter(([x]) => laKHTN(x) && x.ds.length); d.chon = {}; d.ten = {};
+  tr.forEach(([x, i]) => { d.ten[i] = x.lop.toUpperCase(); d.chon[i] = true; });
+  const u = new Uint8Array(await f.arrayBuffer()), vnCu = VN, moi = { ten: f.name, hk: doanHK(tr.map(([x]) => x.tieuDe).join(' ')) || UI.hk, luc: new Date().toLocaleString('vi-VN'), b64: b64Tu(u) };
+  const undo = { classes: JSON.stringify(DB.classes), ten: JSON.stringify(TEN), cur: DB.cur, vn: vnCu, mau: UI.mau }, kq = apDungDs(d);
+  if (!kq.dau) return toast(kq.giu.length ? '⚠️ ' + esc(kq.giu.join(' · ')) : 'Không có lớp nào để tạo', 'warn');
+  VN = moi; try { localStorage.setItem(KEYVN, JSON.stringify(VN)); } catch (e) { toast('Trình duyệt không giữ được file vnEdu (bộ nhớ đầy) — app vẫn dùng được tới khi đóng trang', 'warn'); }
+  d.si = tr[0][1]; UI.mau = d; UI.hk = VN.hk;
+  LS.set(KEYTEN, TEN); DB.cur = kq.dau.id; UI.dsKq = { file: f.name, moi: kq.moi, cu: kq.cu, lops: kq.lops, giu: kq.giu, undo }; UI.tab = 'nhap'; save(); render(false); ding('win'); confetti();
+  toast(`✔ File đúng mẫu vnEdu (${HKTEN[VN.hk]}) — có ${kq.lops.length} lớp. Nhập đủ 3 phân môn là điểm KHTN tự vào file`, 'ok');
+}
+/* ---- một link chung cho thầy cô phân môn: lớp + họ tên + cách tính đóng gói (mã hoá) vào index.html ---- */
+const KEYPH = 'dkhtn_ph', KEYK = 'dkhtn_k';
+let PH = LS.get(KEYPH, null); // { k, url, luc, n } — chỉ trên máy người tổng hợp, không vào bản sao lưu
+const tuB64 = b => { const x = atob(b), u = new Uint8Array(x.length); for (let i = 0; i < x.length; i++) u[i] = x.charCodeAt(i); return u; };
+const khoaMoi = () => { const u = crypto.getRandomValues(new Uint8Array(20)); return [...u].map(x => (x % 36).toString(36)).join(''); };
+async function khoaGoi(k){ const h = await crypto.subtle.digest('SHA-256', new TextEncoder().encode('dkhtn|' + k)); return crypto.subtle.importKey('raw', h, 'AES-GCM', false, ['encrypt', 'decrypt']); }
+async function dongGoi(obj, k){ const iv = crypto.getRandomValues(new Uint8Array(12)), ct = new Uint8Array(await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, await khoaGoi(k), new TextEncoder().encode(JSON.stringify(obj)))); return { v: 1, iv: b64Tu(iv), data: b64Tu(ct) }; }
+async function moGoi(g, k){ const pt = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: tuB64(g.iv) }, await khoaGoi(k), tuB64(g.data)); return JSON.parse(new TextDecoder().decode(pt)); }
+const linkGV = () => PH && PH.url ? PH.url + '#k=' + PH.k : '';
+const tinGV = () => `Gửi thầy cô dạy Lí – Hoá – Sinh (KHTN): mở link dưới để nhập điểm phân môn của mình — đã có sẵn các lớp, họ tên học sinh và cách tính, không cần nạp hay khai báo gì:\n${linkGV()}\nMở bằng Chrome/Edge (điện thoại hay máy tính đều được). Chọn phân môn của mình → chọn lớp → nhập. Nhập xong vào thẻ 📤 bấm «Tạo mã điểm» rồi gửi lại cho tôi. Link có họ tên học sinh — chỉ dùng trong tổ, không chuyển ra ngoài.`;
+function phatHanhCard(){
+  const lops = Object.values(DB.classes).filter(x => !x.demo), url = (PH && PH.url) || (/^https?:/.test(location.protocol) ? location.origin + location.pathname : '');
+  return card('🔗', 'Một link chung cho thầy cô phân môn (thầy cô mở là nhập được ngay)', `
+    <p class="sub" style="margin:0 0 8px">Thầy cô khai báo xong (up file vnEdu, điểm tối đa từng phần, cột TX của phân môn nào) → bấm đóng gói → app tải về file <b>index.html</b> có sẵn <b>${lops.length} lớp + họ tên + cách tính</b> (mã hoá) → up file đó lên trang web của app (GitHub) → gửi <b>một link</b> cho cả tổ. Thầy cô mở link là có đủ lớp, không phải nạp file hay khai báo gì.</p>
+    <div class="row">${fld('Địa chỉ app trên mạng', `<input id="phUrl" style="width:330px" placeholder="VD https://ten-cua-thay.github.io/KHTN/" value="${esc(url)}">`)}<button class="btn pri big" data-act="phatHanh">📦 Đóng gói → tải index.html</button></div>
+    ${PH && PH.luc ? `<div class="hint ok">✔ Đóng gói lần gần nhất: ${esc(PH.luc)} · ${PH.n} lớp. Đã up <b>index.html</b> lên GitHub chưa? (đợi 1–2 phút trang cập nhật)</div>
+      <p class="small" style="margin:10px 0 4px"><b>Link gửi cả tổ</b> (giữ nguyên mỗi lần đóng gói lại):</p><textarea class="out" readonly id="phLink" style="min-height:52px">${esc(linkGV())}</textarea>
+      <div class="row" style="margin-top:6px"><button class="btn sm pri" data-act="chepMa" data-id="phLink">📋 Chép link</button><button class="btn sm" data-act="chepMa" data-id="phTin">💬 Chép tin nhắn Zalo kèm link</button><button class="btn sm bad" data-act="phDoiKhoa" data-khong-bam>🔑 Đổi khoá (link cũ hết dùng)</button></div><textarea id="phTin" class="hidden">${esc(tinGV())}</textarea>` : ''}
+    <div class="hint warn">🔐 Họ tên trong index.html được <b>mã hoá</b>; khoá nằm ở đoạn <b>#k=…</b> cuối link (không gửi lên máy chủ). Ai có link là xem được họ tên → chỉ gửi trong tổ. Sửa danh sách / khai báo → <b>đóng gói lại, up lại index.html</b>; thầy cô mở lại link là tự cập nhật, điểm đang nhập giữ nguyên.</div>`);
+}
+async function apGoi(){
+  const el = document.getElementById('goiTo'); if (!el || CHUP) return;
+  let g; try { g = JSON.parse(el.textContent); } catch (e) { return; }
+  const kh = new URLSearchParams(location.hash.slice(1)).get('k'), k = kh || LS.get(KEYK, '');
+  if (PH && PH.k && (!k || k === PH.k)) return; // máy người tổng hợp: dữ liệu gốc ở đây rồi
+  if (!k){ UI.goiLoi = 'canKhoa'; render(); return; }
+  let goi; try { goi = await moGoi(g, k); } catch (e) { UI.goiLoi = 'saiKhoa'; render(); return; }
+  LS.set(KEYK, k); UI.goiLoi = null;
+  if (DB.goiId === goi.id && DB.tuGoi) return;
+  for (const id in DB.classes) if (DB.classes[id].demo) delete DB.classes[id];
+  goi.lops.forEach(x => {
+    let c = DB.classes[x.id]; if (!c){ c = sua({ id: x.id, ten: x.ten, khoi: x.khoi, namHoc: x.namHoc, hs: [], cfg: cfgMacDinh(), d: { HK1: {}, HK2: {} }, nhan: [] }); DB.classes[x.id] = c; }
+    const cu = TEN[c.id] || {}, hang = {}; x.hs.forEach(ma => (hang[chuanTen(x.ht[ma])] = hang[chuanTen(x.ht[ma])] || []).push(ma));
+    if (Object.keys(cu).length){ const doi = {}; c.hs.forEach(h => { const q = hang[chuanTen(cu[h.ma])]; if (q && q.length) doi[h.ma] = q.shift(); });
+      Object.keys(c.d || {}).forEach(hk => { const a = c.d[hk] || {}, b = {}; Object.entries(doi).forEach(([m1, m2]) => { if (a[m1]) b[m2] = a[m1]; }); c.d[hk] = b; }); }
+    Object.assign(c, { ten: x.ten, khoi: x.khoi, namHoc: x.namHoc, cfg: Object.assign(cfgMacDinh(), x.cfg), hienTen: true }); c.hs = x.hs.map(ma => ({ ma })); TEN[c.id] = x.ht;
+  });
+  DB.khoa = goi.khoa || {}; DB.tuGoi = { luc: goi.luc, n: goi.lops.length }; DB.goiId = goi.id; if (!DB.classes[DB.cur]) DB.cur = goi.lops[0].id;
+  UI.tab = 'nhap'; LS.set(KEYTEN, TEN); save(); render(false); ding('win');
+  toast(`📦 Đã có sẵn ${goi.lops.length} lớp, họ tên và cách tính do người tổng hợp khai báo — chọn phân môn, chọn lớp rồi nhập điểm`, 'ok');
+}
+/* ---- khoá cột ĐĐGgk / ĐĐGck: người tổng hợp đặt; TX luôn mở ---- */
+const CHE_KHOA = [['mo', 'Mở — nhập, sửa bình thường'], ['khoa', '🔒 Khoá ngay'], ['ngay', '📅 Tự khoá từ ngày…'], ['tuDong', '⏳ Tự khoá sau … ngày kể từ khi bắt đầu nhập']];
+const ngayKhoa = t => new Date(t).toLocaleDateString('vi-VN');
+const ghiBatDau = (hk, k) => { DB.batDau = DB.batDau || {}; if (!DB.batDau[hk + '.' + k]) DB.batDau[hk + '.' + k] = Date.now(); };
+function trangThaiKhoa(hk, k){
+  const o = ((DB.khoa || {})[hk] || {})[k] || { che: 'mo' }, nay = Date.now();
+  if (o.che === 'khoa') return { khoa: true, txt: 'đã khoá' };
+  if (o.che === 'ngay' && o.ngay){ const t = new Date(o.ngay + 'T00:00:00').getTime(); return nay >= t ? { khoa: true, txt: 'đã khoá từ ' + ngayKhoa(t) } : { khoa: false, txt: `tự khoá từ ngày ${ngayKhoa(t)} (còn ${Math.ceil((t - nay) / 864e5)} ngày)` }; }
+  if (o.che === 'tuDong'){ const n = Math.max(1, +o.soNgay || 14), bd = (DB.batDau || {})[hk + '.' + k]; if (!bd) return { khoa: false, txt: `tự khoá ${n} ngày sau khi bắt đầu nhập` };
+    const het = bd + n * 864e5; return nay >= het ? { khoa: true, txt: 'đã tự khoá từ ' + ngayKhoa(het) } : { khoa: false, txt: `tự khoá ngày ${ngayKhoa(het)} (còn ${Math.ceil((het - nay) / 864e5)} ngày)` }; }
+  return { khoa: false, txt: '' };
+}
+const tenCot = k => k === 'gk' ? 'Giữa kì' : 'Cuối kì';
+/* môn đã có điểm (người khác hoặc lần trước đã nhập): phải xác nhận đúng môn mới cho sửa — nhớ trong phiên làm việc */
+UI.suaOK = {};
+const khoaMon = (c, hk, pm) => c.id + '|' + hk + '|' + pm;
+const canHoiMon = (c, hk, pm) => !c.demo && !UI.suaOK[khoaMon(c, hk, pm)] && tienDo(c, hk, pm).co > 0;
+async function hoiMon(){
+  const c = cls(), hk = UI.hk, pm = UI.pm; if (!c || !canHoiMon(c, hk, pm) || UI.dangHoi) return; UI.dangHoi = true; ding('bad');
+  const p = tienDo(c, hk, pm), v = await modal(`<h3>⚠️ Xem lại có đúng môn bạn nhập chưa?</h3><p><b>${pmOf(pm)[3]} ${pmOf(pm)[1]}</b> lớp <b>${esc(c.ten)}</b> — ${HKTEN[hk]} <b>đã có điểm</b> (${p.co}/${p.tong} ô).</p><p>Không phải môn của mình → chọn lại môn. Đúng môn, muốn sửa hoặc nhập tiếp → chọn Sửa.</p>`, [{ label: '↩ Chọn lại môn', v: 0 }, { label: '✏️ Sửa điểm môn này', v: 1, cls: 'pri' }]);
+  UI.dangHoi = false; if (document.activeElement) document.activeElement.blur();
+  if (v){ UI.suaOK[khoaMon(c, hk, pm)] = true; render(); toast(`✏️ Đang sửa điểm ${pmOf(pm)[1]} lớp ${esc(c.ten)}`, 'ok'); } else { scrollTo(0, 0); toast('Chọn đúng phân môn của mình ở hàng nút phía trên', 'warn'); }
+}
+function khoaHint(hk){
+  const ds = ['gk', 'ck'].map(k => [k, trangThaiKhoa(hk, k)]).filter(([, t]) => t.txt);
+  return ds.length ? `<div class="hint ${ds.some(([, t]) => t.khoa) ? 'warn' : 'info'}" style="margin:0 0 10px">${ds.map(([k, t]) => `${t.khoa ? '🔒' : '⏳'} Cột <b>${tenCot(k)} ${HKTEN[hk]}</b>: ${t.txt}`).join(' · ')}. Cột TX luôn nhập được.${DB.tuGoi ? '' : ' Đổi ở thẻ 🏫 → 🔒 Khoá điểm.'}</div>` : '';
+}
+function khoaCard(){
+  const K = DB.khoa || {};
+  return card('🔒', 'Khoá điểm giữa kì / cuối kì (cột TX1–TX4 luôn mở)', `
+    <p class="sub" style="margin:0 0 8px">Khoá để thầy cô phân môn không sửa điểm sau khi đã chốt. Ô bị khoá chỉ xem; mã điểm gửi về mà <b>đổi điểm đã khoá</b> thì app không nhận (ô còn trống vẫn nhận, để ai nộp muộn vẫn vào được).</p>
+    <div class="row" style="margin-bottom:8px"><button class="btn sm" data-act="khoaNhanh">⚡ Đặt nhanh: cả 4 cột tự khoá 14 ngày sau khi bắt đầu nhập</button></div>
+    <div class="tbl"><table class="t"><thead><tr><th>Học kì</th><th>Cột</th><th class="l">Cách khoá</th><th>Ngày / số ngày</th><th class="l">Bây giờ</th></tr></thead><tbody>
+    ${['HK1', 'HK2'].map(hk => ['gk', 'ck'].map(k => { const o = (K[hk] || {})[k] || { che: 'mo' }, t = trangThaiKhoa(hk, k);
+      return `<tr><td>${HKTEN[hk]}</td><td><b>${tenCot(k)}</b></td><td class="l"><select data-khoa="${hk}.${k}.che">${CHE_KHOA.map(([v, l]) => `<option value="${v}" ${o.che === v ? 'selected' : ''}>${l}</option>`).join('')}</select></td>
+        <td>${o.che === 'ngay' ? `<input type="date" data-khoa="${hk}.${k}.ngay" value="${esc(o.ngay || '')}">` : o.che === 'tuDong' ? `<input type="number" min="1" max="120" style="width:70px" data-khoa="${hk}.${k}.soNgay" value="${+o.soNgay || 14}"> ngày` : '—'}</td>
+        <td class="l">${t.khoa ? '🔒 ' : ''}${esc(t.txt || 'đang mở')}</td></tr>`; }).join('')).join('')}</tbody></table></div>
+    <div class="hint warn">📦 Khoá đến máy thầy cô phân môn qua <b>link chung</b>: đổi cách khoá xong → <b>đóng gói lại, up lại index.html</b>. «Tự khoá từ ngày» và «Tự khoá sau … ngày» chạy tự động trên máy thầy cô, không cần đóng gói thêm lần nữa. «Khoá ngay» chỉ tới máy thầy cô sau khi up lại index.html — nhưng máy thầy vẫn chặn mã sửa điểm đã khoá ngay từ lúc bấm.</div>`);
+}
+function lopChiXem(c){
+  const cf = c.cfg;
+  return card('🏫', `Lớp ${esc(c.ten)} — do người tổng hợp khai báo`, `<div class="hint info" style="margin-top:0">📦 Lớp, họ tên và cách tính lấy từ link chung (đóng gói lúc ${esc(DB.tuGoi.luc)}). Thầy cô <b>không cần khai báo gì</b> — cần sửa thì báo người tổng hợp đóng gói lại; mở lại link là tự cập nhật.</div>
+    <div class="row" style="margin-top:8px"><span class="pill">${c.hs.length} học sinh</span><span class="pill">Khối ${c.khoi}</span><span class="pill">${cf.soTX} ĐĐGtx: ${cf.txPM.slice(0, cf.soTX).map((p, i) => `TX${i + 1} ${pmOf(p)[1]}`).join(' · ')}</span>
+    ${['HK1', 'HK2'].map(hk => ['gk', 'ck'].map(k => { const t = trangThaiKhoa(hk, k); return t.txt ? `<span class="pill">${t.khoa ? '🔒' : '⏳'} ${tenCot(k)} ${HKTEN[hk]}: ${esc(t.txt)}</span>` : ''; }).join('')).join('')}
+    <span class="pill">${cf.kieu === 'phan' ? `Đề chung — điểm tối đa phần: ${PM.map(([id, t]) => `${t} ${fmt(cf.phanMax[id])}`).join(' · ')}` : 'Mỗi phân môn thang 10, trung bình theo trọng số'}</span></div>`);
+}
+function vnStrip(c){
+  if (!VN) return `<div class="hint warn" style="margin:0 0 10px">📗 Chưa có file vnEdu — bấm <b>📗 Nạp file vnEdu</b> (file Excel tải từ vnEdu) để điểm KHTN tự vào đúng ô của file.</div>`;
+  const m = UI.mau, coTrang = m && timTrang(m, c) >= 0, hk = VN.hk, n = c.hs.length;
+  if (!m) return `<div class="hint info" style="margin:0 0 10px">📗 Đang mở file vnEdu «${esc(VN.ten)}»…</div>`;
+  if (!coTrang) return `<div class="hint warn" style="margin:0 0 10px">📗 Lớp ${esc(c.ten)} không có trong file vnEdu «${esc(VN.ten)}» — điểm lớp này không vào file.</div>`;
+  const du = k => c.hs.filter(h => ketQua(c, hk, h.ma)[k].v != null).length, g = du('gk'), k2 = du('ck');
+  return `<div class="hint ok" style="margin:0 0 10px">📗 <b>File vnEdu «${esc(VN.ten)}» · ${HKTEN[hk]}</b> — lớp ${esc(c.ten)}: <b>giữa kì ${g}/${n}</b> em · <b>cuối kì ${k2}/${n}</b> em đủ 3 phân môn → đã vào file.
+    ${UI.hk !== hk ? `<br>⚠️ Đang nhập ${HKTEN[UI.hk]}, file vnEdu là ${HKTEN[hk]} — điểm ${HKTEN[UI.hk]} không vào file này.` : ''}
+    <div class="row" style="margin-top:6px"><button class="btn ok" data-act="taiVnEdu">⬇ Tải file vnEdu đã điền (up lên vnEdu)</button><span class="small muted">File là: <span class="seg">${['HK1', 'HK2'].map(x => `<button class="${hk === x ? 'on' : ''}" data-act="vnHK" data-v="${x}">${HKTEN[x]}</button>`).join('')}</span></span></div></div>`;
+}
+VIEW.lop = c => {
+  const cf = c.cfg, w = canhBaoCfg(c), coTen = Object.keys(TEN[c.id] || {}).length;
+  return dsCard() + `<div class="cols">${card('🏫', 'Thông tin lớp', `<div class="grid">
+      ${fld('Tên lớp', `<input data-f="c.ten" data-rr="1" value="${esc(c.ten)}">`)}
+      ${fld('Khối', `<select data-f="c.khoi" data-num="1"><option value="8" ${c.khoi === 8 ? 'selected' : ''}>Khối 8</option><option value="9" ${c.khoi === 9 ? 'selected' : ''}>Khối 9</option></select>`)}
+      ${fld('Năm học', `<input data-f="c.namHoc" value="${esc(c.namHoc)}">`)}
+      ${fld('Sĩ số', `<input id="siSo" type="number" min="1" max="70" value="${c.hs.length}">`)}</div>
+    <div class="row" style="margin-top:8px"><button class="btn sm" data-act="siSo">Cập nhật danh sách mã</button><span class="muted small">Thứ tự HS01, HS02… phải <b>đúng thứ tự danh sách lớp trên vnEdu</b>. Cách chắc nhất: tạo danh sách từ file vnEdu (thẻ 📗).</span></div>
+    <div class="row" style="margin-top:8px"><span class="pill">${coTen ? `🔐 Có họ tên của ${coTen} em trên máy này` : 'Chưa có họ tên trên máy này (chỉ mã)'}</span>
+      ${coTen ? `<label class="row small"><input type="checkbox" data-f="c.hienTen" data-rr="1" ${c.hienTen ? 'checked' : ''}> Hiện họ tên khi nhập điểm</label><button class="btn sm bad" data-act="xoaTen" data-khong-bam>Xoá họ tên khỏi máy này</button>` : ''}</div>`)}
+  ${card('🧮', 'Cách tính điểm KHTN (đặt theo hướng dẫn của trường)', `
+    <div class="grid">${fld('Số ĐĐGtx mỗi học kì', `<input type="number" min="1" max="8" data-f="c.cfg.soTX" data-rr="1" value="${cf.soTX}">`)}</div>
+    <p class="small" style="margin:10px 0 4px"><b>Cột ĐĐGtx nào do phân môn nào cho điểm:</b></p>
+    <div class="row">${Array.from({ length: cf.soTX }, (_, i) => `<label class="fld" style="min-width:110px">TX${i + 1}<select data-f="c.cfg.txPM.${i}" data-rr="1">${PM.map(([id, t]) => `<option value="${id}" ${cf.txPM[i] === id ? 'selected' : ''}>${t}</option>`).join('')}</select></label>`).join('')}</div>
+    <p class="small" style="margin:12px 0 4px"><b>ĐĐGgk, ĐĐGck của KHTN tính từ 3 phân môn:</b></p>
+    <span class="seg"><button class="${cf.kieu === 'phan' ? 'on' : ''}" data-act="kieu" data-v="phan">Đề chung — cộng điểm 3 phần</button><button class="${cf.kieu === 'tb' ? 'on' : ''}" data-act="kieu" data-v="tb">Mỗi phân môn thang 10 — trung bình theo trọng số</button></span>
+    <div class="row" style="margin-top:8px">${PM.map(([id, t, col, ic]) => cf.kieu === 'phan'
+      ? fld(`${ic} ${t}: điểm tối đa phần`, `<input type="number" step="0.25" min="0" max="10" data-f="c.cfg.phanMax.${id}" data-rr="1" value="${cf.phanMax[id]}">`, 'width:170px')
+      : fld(`${ic} ${t}: trọng số (số tiết)`, `<input type="number" step="1" min="0" data-f="c.cfg.tb.${id}" data-rr="1" value="${cf.tb[id]}">`, 'width:170px')).join('')}</div>
+    <p class="small muted" style="margin:6px 0 0">${cf.kieu === 'phan' ? 'VD đề chung 10 điểm: phần Lí 4 điểm, Hoá 3, Sinh 3 → ĐĐGck = tổng điểm 3 phần.' : 'VD trọng số theo số tiết của từng phân môn trong kì → ĐĐGck = (Lí×a + Hoá×b + Sinh×c)/(a+b+c).'} Kết quả làm tròn 1 chữ số thập phân (TT 22/2021 Điều 5 khoản 3 điểm b).</p>
+    ${w.map(x => `<div class="hint warn">⚠️ ${x}</div>`).join('')}
+    <details class="box"><summary>ĐTB môn học kì, cả năm (chỉ để tham khảo)</summary>
+      <p class="small">ĐTBmhk = (tổng ĐĐGtx + ${cf.heSo.gk}×ĐĐGgk + ${cf.heSo.ck}×ĐĐGck) / (số ĐĐGtx + ${cf.heSo.gk} + ${cf.heSo.ck}) · ĐTBmcn = (ĐTBhkI + ${cf.heSo.hk2}×ĐTBhkII) / ${1 + +cf.heSo.hk2}. ⚠️ Kho của em chưa có bản gốc TT 22/2021 Điều 9 — thầy cô đối chiếu, sửa hệ số nếu khác. App <b>không</b> đưa ĐTB vào file vnEdu (vnEdu tự tính).</p>
+      <div class="row">${fld('Hệ số GK', `<input type="number" min="0" max="5" data-f="c.cfg.heSo.gk" data-rr="1" value="${cf.heSo.gk}">`, 'width:110px')}${fld('Hệ số CK', `<input type="number" min="0" max="5" data-f="c.cfg.heSo.ck" data-rr="1" value="${cf.heSo.ck}">`, 'width:110px')}${fld('Hệ số HK II (cả năm)', `<input type="number" min="0" max="5" data-f="c.cfg.heSo.hk2" data-rr="1" value="${cf.heSo.hk2}">`, 'width:150px')}</div></details>`,
+    '', 'Số ĐĐGtx: môn trên 70 tiết/năm có 4 điểm đánh giá thường xuyên mỗi học kì (TT 22/2021 Điều 6 khoản 2) — số tiết KHTN theo kế hoạch của trường.')}</div>
+  ${card('🧰', 'Lớp này', `<div class="row"><button class="btn" data-act="chiaSeLop">📦 Chia sẻ lớp cho thầy cô phân môn khác</button><button class="btn bad" data-act="xoaLop" data-khong-bam>🗑 Xoá lớp khỏi app</button></div>
+    <p class="small muted" style="margin:6px 0 0">Chia sẻ lớp: tạo mã chứa danh sách mã HS + cách tính (không có họ tên, không có điểm) để thầy cô Lí/Hoá/Sinh dùng đúng một lớp giống nhau trên máy của mình.</p>`)}`;
+};
+
+/* ================= ✍️ NHẬP ĐIỂM ================= */
+VIEW.nhap = c => {
+  const hk = UI.hk, pm = UI.pm, cf = c.cfg, [, ten, col, ic] = pmOf(pm), txs = cf.txPM.slice(0, cf.soTX).map((p, i) => p === pm ? i : -1).filter(i => i >= 0), mx = maxPhan(c, pm);
+  const rings = PM.map(([id, t, cc, ii]) => { const p = tienDo(c, hk, id); return `<div style="text-align:center">${donutSVG([{ l: 'Đã nhập', v: p.co, c: cc }, { l: 'Còn thiếu', v: p.tong - p.co, c: '#e5e7eb' }], 120, p.tong ? Math.round(p.co / p.tong * 100) + '%' : '—', `${p.co}/${p.tong} ô`)}<div class="small"><b style="color:${cc}">${ii} ${t}</b></div></div>`; }).join('');
+  const khGK = trangThaiKhoa(hk, 'gk').khoa, khCK = trangThaiKhoa(hk, 'ck').khoa, xn = canHoiMon(c, hk, pm);
+  const cots = [...txs.map(i => ['tx' + i, 'TX' + (i + 1)]), ['gk', 'Giữa kì' + (khGK ? ' 🔒' : '')], ['ck', 'Cuối kì' + (khCK ? ' 🔒' : '')]], cot = cots.some(([k]) => k === UI.cot) ? UI.cot : 'all', hien = k => cot === 'all' || cot === k, mot = cot !== 'all';
+  const daCo = k => c.hs.filter(h => { const r = dongXem(c, hk, h.ma); return num(k === 'gk' || k === 'ck' ? (r[k] || {})[pm] : (r.tx || [])[+k.slice(2)]) != null; }).length;
+  const vuotO = c.hs.filter(h => { const r = dongXem(c, hk, h.ma); return ['gk', 'ck'].some(k => num((r[k] || {})[pm]) > mx); }).length;
+  const inpt = (path, v, max, k) => `<input class="sc ${num(v) != null ? (num(v) > max ? 'sai' : 'co') : ''}"${num(v) > max ? ` title="⛔ Vượt điểm tối đa ${fmt(max)} — sửa lại"` : ''} inputmode="decimal" data-d="${path}" data-max="${max}" data-k="${k}" value="${v == null || v === '' ? '' : String(v).replace('.', ',')}" aria-label="${k}"${(k === 'GK' && khGK) || (k === 'CK' && khCK) ? ' readonly title="🔒 Cột đã khoá — chỉ xem"' : xn ? ' readonly data-xn="1" title="Môn này đã có điểm — bấm ✏️ Sửa điểm để chỉnh"' : ''}${mot ? ' style="width:120px;font-size:18px;padding:8px"' : ''}>`;
+  const lops = Object.values(DB.classes), coTen = c.hienTen && Object.keys(TEN[c.id] || {}).length;
+  const napNut = DB.tuGoi ? '' : `<label class="btn sm" id="dsDrop" title="Kéo thả hoặc bấm chọn file Excel tải từ vnEdu">📗 Nạp file vnEdu<input type="file" id="dsFile" accept=".xlsx,.xlsm" class="hidden"></label>`;
+  return `<section class="card"><div class="row" style="margin-bottom:10px"><span class="muted small">Lớp:</span>${lops.map(x => `<button class="pm ${x.id === c.id ? 'on sinh' : 'sinh'}" style="font-size:13.5px;padding:6px 12px" data-act="chonLop" data-id="${x.id}">${esc(x.ten)}</button>`).join('')}${napNut}</div>
+    ${UI.dsKq ? `<div style="margin:0 0 10px">${dsKqHint()}</div>` : ''}
+    ${DB.tuGoi ? `<div class="hint info" style="margin:0 0 10px">📦 Lớp, họ tên, cách tính đã có sẵn từ người tổng hợp — chọn <b>phân môn của mình</b>, chọn lớp rồi nhập. Nhập xong: thẻ 📤 → <b>Tạo mã điểm</b> → gửi người tổng hợp.</div>` : c.demo ? '' : vnStrip(c)}
+    ${khoaHint(hk)}
+    ${xn ? `<div class="hint bad" style="margin:0 0 10px">⚠️ <b>${pmOf(pm)[3]} ${pmOf(pm)[1]} lớp ${esc(c.ten)} — ${HKTEN[hk]} đã có điểm</b> (${tienDo(c, hk, pm).co}/${tienDo(c, hk, pm).tong} ô). <b>Xem lại có đúng môn bạn nhập chưa?</b><div class="row" style="margin-top:6px"><button class="btn sm" data-act="doiMon">↩ Chọn lại môn</button><button class="btn sm pri" data-act="suaMon">✏️ Đúng môn của tôi — sửa / nhập tiếp</button></div></div>` : ''}
+    <div class="row" style="justify-content:space-between"><div class="row">${hkSeg()}<span class="muted small">Chọn phân môn của mình:</span>
+    ${PM.map(([id, t, cc, ii]) => `<button class="pm ${id} ${pm === id ? 'on' : ''}" data-act="pm" data-v="${id}">${ii} ${t}</button>`).join('')}</div></div>
+    <div class="row" style="justify-content:space-around;margin-top:10px">${rings}</div></section>
+  ${card(ic, `${ten} — ${HKTEN[hk]} · lớp ${esc(c.ten)}${mot ? ` · cột ${cots.find(([k]) => k === cot)[1]}` : ''}`, `
+    <div class="row" style="margin-bottom:8px"><span class="small"><b>Đang nhập cột:</b></span><span class="seg"><button class="${cot === 'all' ? 'on' : ''}" data-act="cot" data-v="all">Tất cả</button>${cots.map(([k, t]) => `<button class="${cot === k ? 'on' : ''}" data-act="cot" data-v="${k}">${t} <span class="small" style="opacity:.75">${daCo(k)}/${c.hs.length}</span></button>`).join('')}</span></div>
+    ${vuotO ? `<div class="hint bad">⛔ ${vuotO} em có điểm phần ${ten} lớn hơn điểm tối đa đang khai báo (<b>${fmt(mx)}</b>) — ô tô đỏ bên dưới. Sửa điểm cho đúng, hoặc sửa khai báo ở thẻ 🏫 nếu khai báo sai.</div>` : ''}
+    <p class="sub">${mot ? `Chỉ hiện cột <b>${cots.find(([k]) => k === cot)[1]}</b> — các cột khác ẩn đi, điểm đã có vẫn giữ nguyên. ` : ''}Gõ điểm rồi <b>Enter</b> xuống em dưới (dùng được dấu phẩy). ${txs.length ? `ĐĐGtx của ${ten}: ${txs.map(i => 'TX' + (i + 1)).join(', ')} (thang 10). ` : `<b>Chưa có cột ĐĐGtx nào giao cho ${ten}</b> (sửa ở thẻ 🏫). `}${cf.kieu === 'phan' ? `Phần ${ten} trong đề giữa kì / cuối kì: tối đa <b>${fmt(mx)}</b> điểm.` : `Bài giữa kì / cuối kì phần ${ten}: thang 10.`}</p>
+    <div class="tbl" style="max-height:640px"><table class="t"><thead><tr><th>${coTen ? 'Học sinh' : 'Mã HS'}</th>${txs.filter(i => hien('tx' + i)).map(i => `<th>TX${i + 1}</th>`).join('')}${hien('gk') ? `<th>Giữa kì${khGK ? ' 🔒' : ''}${cf.kieu === 'phan' ? ` (/${fmt(mx)})` : ''}</th>` : ''}${hien('ck') ? `<th>Cuối kì${khCK ? ' 🔒' : ''}${cf.kieu === 'phan' ? ` (/${fmt(mx)})` : ''}</th>` : ''}</tr></thead><tbody>
+    ${c.hs.map((h, k) => { const r = dongXem(c, hk, h.ma), t = coTen ? tenOf(c, h.ma) : ''; return `<tr><td>${t ? `<b style="font-size:14.5px">${k + 1}. ${esc(t)}</b><br><span class="small muted">${h.ma}</span>` : `<b>${h.ma}</b>`}</td>${txs.filter(i => hien('tx' + i)).map(i => `<td>${inpt(`${hk}.${h.ma}.tx.${i}`, (r.tx || [])[i], 10, 'TX' + (i + 1))}</td>`).join('')}${hien('gk') ? `<td>${inpt(`${hk}.${h.ma}.gk.${pm}`, (r.gk || {})[pm], mx, 'GK')}</td>` : ''}${hien('ck') ? `<td>${inpt(`${hk}.${h.ma}.ck.${pm}`, (r.ck || {})[pm], mx, 'CK')}</td>` : ''}</tr>`; }).join('')}
+    </tbody></table></div>
+    <div class="row" style="margin-top:10px"><button class="btn pri" data-act="go" data-id="gui">📤 Nhập xong — gửi điểm ${ten} cho người tổng hợp</button><button class="btn" data-act="go" data-id="tong">🧮 Xem tổng hợp KHTN</button></div>`)}`;
+};
+
+/* ================= 🧮 TỔNG HỢP ================= */
+VIEW.tong = c => {
+  const hk = UI.hk, cf = c.cfg, R = c.hs.map(h => ({ h, k: ketQua(c, hk, h.ma) }));
+  const du = R.filter(x => x.k.tx.every(v => v != null) && x.k.gk.v != null && x.k.ck.v != null).length;
+  const ckv = R.map(x => x.k.ck.v).filter(v => v != null), tbck = ckv.length ? r1(sum(ckv) / ckv.length) : null;
+  const bins = [[0, 3.5, '0–3,4'], [3.5, 5, '3,5–4,9'], [5, 6.5, '5–6,4'], [6.5, 8, '6,5–7,9'], [8, 10.01, '8–10']];
+  const cols = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#0f766e'];
+  const cell = (v, thieu) => v == null ? `<td class="thieu" title="${thieu && thieu.length ? 'Thiếu phần: ' + thieu.map(p => pmOf(p)[1]).join(', ') : 'Chưa có điểm'}">${thieu && thieu.length ? thieu.map(p => pmOf(p)[3]).join('') : '·'}</td>` : `<td><b>${fmt(v)}</b></td>`;
+  return `<div class="kpis"><div class="kpi" style="background:linear-gradient(135deg,#0f766e,#0891b2)"><span class="e">👥</span><b>${c.hs.length}</b><span>học sinh</span></div>
+    <div class="kpi" style="background:linear-gradient(135deg,#16a34a,#65a30d)"><span class="e">✅</span><b>${du}/${c.hs.length}</b><span>em đủ điểm ${HKTEN[hk]}</span></div>
+    ${PM.map(([id, t, cc, ii]) => { const p = tienDo(c, hk, id); return `<div class="kpi" style="background:${cc}"><span class="e">${ii}</span><b>${p.tong ? Math.round(p.co / p.tong * 100) : 0}%</b><span>${t}: ${p.co}/${p.tong} ô</span></div>`; }).join('')}</div>
+  ${card('🧮', `Điểm KHTN — ${HKTEN[hk]} · lớp ${esc(c.ten)}`, `
+    <div class="row" style="margin-bottom:8px">${hkSeg()}<span class="legend">${PM.map(([id, t, cc, ii]) => `<span><i style="background:${cc}"></i>${ii} ${t}</span>`).join('')}<span><i style="background:#fff7ed;border:1px solid #fdba74"></i>ô thiếu (biểu tượng = phân môn còn thiếu)</span></span></div>
+    <div class="tbl" style="max-height:620px"><table class="t"><thead><tr><th>Mã HS</th>${Array.from({ length: cf.soTX }, (_, i) => `<th style="color:${pmOf(cf.txPM[i])[2]}">TX${i + 1}<br><span class="small">${pmOf(cf.txPM[i])[3]}</span></th>`).join('')}
+      <th>ĐĐGgk<br><span class="small">${cf.kieu === 'phan' ? 'Lí+Hoá+Sinh' : 'TB trọng số'}</span></th><th>ĐĐGck<br><span class="small">${cf.kieu === 'phan' ? 'Lí+Hoá+Sinh' : 'TB trọng số'}</span></th><th class="muted">ĐTBmhk<br><span class="small">tham khảo</span></th>${hk === 'HK2' ? '<th class="muted">ĐTBmcn<br><span class="small">tham khảo</span></th>' : ''}</tr></thead><tbody>
+    ${R.map(({ h, k }) => `<tr><td><b>${esc(lab(c, h.ma))}</b></td>${k.tx.map((v, i) => cell(v, num(v) == null ? [cf.txPM[i]] : null)).join('')}${cell(k.gk.v, k.gk.thieu)}${cell(k.ck.v, k.ck.thieu)}<td class="muted">${k.tb == null ? '—' : fmt(k.tb)}</td>${hk === 'HK2' ? `<td class="muted">${fmt(tbCaNam(c, h.ma)) || '—'}</td>` : ''}</tr>`).join('')}
+    </tbody></table></div>
+    <div class="row" style="margin-top:10px">${DB.tuGoi ? '' : '<button class="btn ok" data-act="go" data-id="vnedu">📗 Điền vào file vnEdu</button>'}<button class="btn pri" data-act="xuatTong">⬇ Xuất Excel điểm tổng hợp 3 môn (lớp ${esc(c.ten)})</button></div>`)}
+  <div class="cols">${card('📊', `Phổ điểm ĐĐGck KHTN — ${HKTEN[hk]}`, ckv.length ? barsSVG(bins.map(([a, b, l], i) => ({ l, v: ckv.filter(v => v >= a && v < b).length, c: cols[i] }))) + `<p class="small muted">${ckv.length} em có điểm · trung bình lớp ${fmt(tbck)} · chỉ để tổ chuyên môn xem lại đề, không dùng so sánh học sinh.</p>` : '<div class="hint info">Chưa có em nào đủ điểm cuối kì 3 phân môn.</div>')}
+  ${card('🔎', 'Soát nhanh', soat(c, hk))}</div>`;
+};
+function soat(c, hk){
+  const out = [], mx = {}; PMID.forEach(p => mx[p] = maxPhan(c, p));
+  c.hs.forEach(h => { const r = dongXem(c, hk, h.ma); (r.tx || []).forEach((v, i) => { if (num(v) != null && (v < 0 || v > 10)) out.push(`${h.ma} TX${i + 1} = ${fmt(v)} ngoài thang 10`); });
+    ['gk', 'ck'].forEach(k => PMID.forEach(p => { const v = num((r[k] || {})[p]); if (v != null && (v < 0 || v > mx[p])) out.push(`${h.ma} ${k.toUpperCase()} phần ${pmOf(p)[1]} = ${fmt(v)} vượt tối đa ${fmt(mx[p])}`); })); });
+  const w = canhBaoCfg(c);
+  if (!out.length && !w.length) return '<div class="hint ok">✔ Không thấy điểm ngoài thang, cách tính hợp lệ.</div>';
+  return [...w.map(x => `<div class="hint warn">⚠️ ${x}</div>`), ...out.slice(0, 30).map(x => `<div class="hint bad">⛔ ${esc(x)}</div>`)].join('');
+}
+
+/* ================= 📤 GỬI / NHẬN ================= */
+const maHoaMa = (tien, obj) => tien + ':' + btoa(unescape(encodeURIComponent(JSON.stringify(obj))));
+function docMa(text){ const out = []; for (const m of String(text || '').matchAll(/(DKHTN(?:-LOP)?):([A-Za-z0-9+/=]+)/g)){ try { out.push(JSON.parse(decodeURIComponent(escape(atob(m[2]))))); } catch (e) {} } if (!out.length){ try { const j = JSON.parse(text); if (j && j.ma) return docMa(j.ma); } catch (e) {} } return out; }
+function maDiem(c, hk, pm){
+  const txs = c.cfg.txPM.slice(0, c.cfg.soTX).map((p, i) => p === pm ? i : -1).filter(i => i >= 0), ds = {};
+  c.hs.forEach(h => { const r = dongXem(c, hk, h.ma), o = {}; txs.forEach(i => { if (num((r.tx || [])[i]) != null) (o.tx = o.tx || {})[i] = +r.tx[i]; }); if (num((r.gk || {})[pm]) != null) o.gk = +r.gk[pm]; if (num((r.ck || {})[pm]) != null) o.ck = +r.ck[pm]; if (Object.keys(o).length) ds[h.ma] = o; });
+  return maHoaMa('DKHTN', { k: 'DKHTN', v: 1, cls: c.id, lop: c.ten, hk, pm, txs, ds, luc: new Date().toISOString() });
+}
+VIEW.gui = c => guiCu(c) + (DB.tuGoi ? '' : bangDiemCard(c));
+function guiCu(c){
+  const hk = UI.hk, pm = UI.pm, [, ten, col, ic] = pmOf(pm), p = tienDo(c, hk, pm);
+  return `<div class="cols">${card('📤', 'Thầy cô phân môn: gửi điểm cho người tổng hợp', `
+    <div class="row" style="margin-bottom:8px">${hkSeg()}${PM.map(([id, t, cc, ii]) => `<button class="pm ${id} ${pm === id ? 'on' : ''}" data-act="pm" data-v="${id}">${ii} ${t}</button>`).join('')}</div>
+    <p class="small">Đã nhập <b>${p.co}/${p.tong}</b> ô của ${ic} ${ten} (${HKTEN[hk]}). Bấm tạo mã → <b>chép</b> → dán Zalo gửi người nhập điểm KHTN lên vnEdu (hoặc tải file gửi kèm).</p>
+    <div class="row"><button class="btn pri big" data-act="taoMaDiem">🔐 Tạo mã điểm ${ten}</button></div>
+    ${UI.maDiem ? `<textarea class="out" readonly id="maDiemOut">${UI.maDiem}</textarea><div class="row" style="margin-top:6px"><button class="btn sm pri" data-act="chepMa" data-id="maDiemOut">📋 Chép mã</button><button class="btn sm" data-act="taiMa" data-id="maDiemOut" data-ten="Diem ${esc(ten)} - ${hk} - lop ${esc(c.ten)}">⬇ Tải file</button></div>` : ''}
+    <p class="small muted">Mã chỉ có mã HS và điểm của ${ten}, không có họ tên. Máy thầy cô phải có <b>cùng một lớp</b> với người tổng hợp (nhận qua «📦 Chia sẻ lớp»).</p>`)}
+  ${DB.tuGoi ? '' : card('📥', 'Người tổng hợp: nhận điểm các phân môn', `
+    <p class="small">Dán mã thầy cô phân môn gửi (dán được nhiều mã một lúc, lẫn chữ cũng được), hoặc kéo thả file .json. Cũng dán được <b>mã chia sẻ lớp</b> (DKHTN-LOP) ở đây.</p>
+    <label class="drop" id="maDrop" style="padding:8px"><textarea id="maIn" class="inp" rows="4" style="width:100%;border:0;background:transparent" placeholder="Dán mã DKHTN:… vào đây (hoặc kéo thả file)"></textarea><input type="file" id="maFile" accept=".json,.txt" class="hidden"></label>
+    <div class="row" style="margin-top:8px"><button class="btn ok" data-act="nhanMa">📥 Nhận</button></div>
+    ${c.nhan.length ? `<p class="small" style="margin:12px 0 4px"><b>Đã nhận</b></p><div class="tbl" style="max-height:220px"><table class="t"><thead><tr><th>Lúc</th><th>Phân môn</th><th>Học kì</th><th>Số em</th><th>Ghi đè</th></tr></thead><tbody>${c.nhan.slice().reverse().slice(0, 30).map(x => `<tr><td class="l">${esc(x.luc)}</td><td>${x.tu ? `📊 ${esc(x.tu)}` : `<b style="color:${pmOf(x.pm)[2]}">${pmOf(x.pm)[3]} ${pmOf(x.pm)[1]}</b>`}</td><td>${HKTEN[x.hk]}</td><td>${x.n}</td><td>${x.de || 0}</td></tr>`).join('')}</tbody></table></div>` : ''}`)}</div>`;
+}
+async function nhanMa(list){
+  if (!list.length) return toast('Không thấy mã DKHTN hợp lệ — chép lại đủ cả mã', 'bad');
+  for (const j of list){
+    if (j.k === 'DKHTN-LOP'){
+      const co = DB.classes[j.cls];
+      if (co){ co.cfg = Object.assign(cfgMacDinh(), j.cfg); while (co.hs.length < j.n) co.hs.push({ ma: 'HS' + pad2(co.hs.length + 1) }); toast(`Đã cập nhật cách tính lớp ${esc(j.ten)}`, 'ok'); }
+      else { const c = sua({ id: j.cls, ten: j.ten, khoi: j.khoi, namHoc: j.namHoc, hs: Array.from({ length: j.n }, (_, i) => ({ ma: 'HS' + pad2(i + 1) })), cfg: Object.assign(cfgMacDinh(), j.cfg), d: { HK1: {}, HK2: {} }, nhan: [] }); DB.classes[c.id] = c; DB.cur = c.id; toast(`📦 Đã nhận lớp ${esc(j.ten)} (${j.n} em) — giờ nhập điểm phân môn của mình`, 'ok'); }
+      continue;
+    }
+    if (j.k !== 'DKHTN') continue;
+    const c = DB.classes[j.cls];
+    if (!c){ await modal(`<h3>Chưa có lớp ${esc(j.lop)} trên máy này</h3><p>Mã điểm phải nhận vào đúng lớp đã chia sẻ. Nhờ người tổng hợp gửi <b>📦 mã chia sẻ lớp</b> trước, dán vào đây, rồi dán lại mã điểm.</p>`, [{ label: 'Đã hiểu', v: 1, cls: 'pri' }]); continue; }
+    const pm = j.pm, hk = j.hk, mxP = maxPhan(c, pm), kh = { gk: trangThaiKhoa(hk, 'gk').khoa, ck: trangThaiKhoa(hk, 'ck').khoa }; let de = 0, n = 0, ngoai = 0, vuot = 0, khoaBo = 0;
+    for (const ma in j.ds){ if (!c.hs.some(h => h.ma === ma)){ ngoai++; continue; } const r = dongXem(c, hk, ma), o = j.ds[ma];
+      for (const i in (o.tx || {})) { const v = num(r.tx[i]); if (v != null && v !== +o.tx[i]) de++; }
+      ['gk', 'ck'].forEach(k => { const v = num((r[k] || {})[pm]); if (o[k] != null && v != null && v !== +o[k] && !kh[k]) de++; }); }
+    if (de){ const ok = await modal(`<h3>${pmOf(pm)[3]} ${pmOf(pm)[1]} — ${HKTEN[hk]}: có ${de} ô khác điểm đang có</h3><p>Ghi đè bằng điểm vừa nhận?</p>`, [{ label: 'Giữ điểm cũ', v: 0 }, { label: 'Ghi đè', v: 1, cls: 'pri' }]); if (!ok) continue; }
+    for (const ma in j.ds){ if (!c.hs.some(h => h.ma === ma)) continue; const r = dong(c, hk, ma), o = j.ds[ma];
+      for (const i in (o.tx || {})) { const v = +o.tx[i]; if (v >= 0 && v <= 10) r.tx[i] = v; else vuot++; }
+      ['gk', 'ck'].forEach(k => { if (o[k] == null) return; const v = +o[k], cu = num(r[k][pm]); if (kh[k] && cu != null){ if (cu !== v) khoaBo++; return; } if (v >= 0 && v <= mxP){ r[k][pm] = v; ghiBatDau(hk, k); } else vuot++; }); n++; }
+    c.nhan.push({ luc: new Date().toLocaleString('vi-VN'), pm, hk, n, de }); DB.cur = c.id;
+    toast(`📥 Đã nhận điểm ${pmOf(pm)[1]} ${HKTEN[hk]} của ${n} em${ngoai ? ` (bỏ ${ngoai} mã không có trong lớp)` : ''}`, 'ok'); ding('win');
+    if (khoaBo) await modal(`<h3>🔒 Không nhận ${khoaBo} ô sửa điểm đã khoá</h3><p>Mã ${pmOf(pm)[1]} lớp ${esc(c.ten)} (${HKTEN[hk]}) có ${khoaBo} ô giữa kì / cuối kì <b>khác điểm đã chốt</b> trong khi cột đang khoá — app giữ điểm cũ. Thật sự cần sửa: mở khoá ở thẻ 🏫 → 🔒 Khoá điểm, nhận lại mã, rồi khoá lại.</p>`, [{ label: 'Đã hiểu', v: 1, cls: 'pri' }]);
+    if (vuot) await modal(`<h3>⛔ Bỏ qua ${vuot} ô điểm vượt tối đa</h3><p>Phần ${pmOf(pm)[1]} lớp ${esc(c.ten)} đang khai báo tối đa <b>${fmt(mxP)}</b> điểm (TX tối đa 10). ${vuot} ô trong mã lớn hơn mức đó nên <b>không ghi</b>. Kiểm lại khai báo ở thẻ 🏫 (hai máy phải khai báo giống nhau) rồi nhận lại mã, hoặc nhập tay các ô đó.</p>`, [{ label: 'Đã hiểu', v: 1, cls: 'pri' }]);
+  }
+  save(); render();
+}
+
+/* ================= 📗 FILE EXCEL (vnEdu nhiều trang · bảng điểm của tổ) ================= */
+const KHOA_COT = c => [...Array.from({ length: c.cfg.soTX }, (_, i) => ['tx' + i, 'TX' + (i + 1)]), ['gk', 'ĐĐGgk'], ['ck', 'ĐĐGck']];
+const LA_TEN = x => /^\s*(họ\s*(và|&)?\s*tên|tên)(\s*(học\s*sinh|hs))?\s*$/i.test(String(x ?? '').replace(/\s+/g, ' '));
+const khoaTen = x => String(x || '').normalize('NFC').toLowerCase().replace(/[^0-9a-zà-ỹđ]+/g, ' ').trim();
+const khoaLop = x => { const m = String(x || '').toLowerCase().match(/(\d{1,2})\s*a\s*(\d{1,2})/); return m ? m[1] + 'a' + m[2] : ''; };
+const soVN = v => typeof v === 'number' ? v : (/^\s*\d+([.,]\d+)?\s*$/.test(String(v ?? '')) ? +String(v).trim().replace(',', '.') : null);
+function docRows(doc, ss){
+  const rows = [];
+  for (const r of doc.getElementsByTagName('row')){
+    const ri = (+r.getAttribute('r') || rows.length + 1) - 1, row = rows[ri] = rows[ri] || [];
+    for (const ce of r.getElementsByTagName('c')){
+      const col = colIdx((ce.getAttribute('r') || '').replace(/\d+/g, '')), t = ce.getAttribute('t'), v = ce.getElementsByTagName('v')[0];
+      let val = ''; if (t === 's') val = ss[+(v && v.textContent)] ?? ''; else if (t === 'inlineStr') val = [...ce.getElementsByTagName('t')].map(x => x.textContent).join(''); else if (v) val = t === 'str' || t === 'e' ? v.textContent : (v.textContent !== '' && isFinite(+v.textContent) ? +v.textContent : v.textContent);
+      if (col >= 0) row[col] = val;
+    }
+  }
+  return Array.from(rows, r => Array.from(r || [], x => x ?? ''));
+}
+/* đọc mọi trang của một file .xlsx (chỉ trong trình duyệt) */
+async function docExcel(f){
+  const buf = await f.arrayBuffer(), files = await unzipAll(buf), td = new TextDecoder(), get = n => files.find(x => x.name.toLowerCase() === n.toLowerCase());
+  const X = x => new DOMParser().parseFromString(td.decode(x.data), 'application/xml');
+  const ssf = get('xl/sharedStrings.xml'), ss = ssf ? [...X(ssf).getElementsByTagName('si')].map(si => [...si.getElementsByTagName('t')].map(t => t.textContent).join('')) : [];
+  const rels = {}; try { for (const r of X(get('xl/_rels/workbook.xml.rels')).getElementsByTagName('Relationship')) rels[r.getAttribute('Id')] = r.getAttribute('Target'); } catch (e) {}
+  const sheets = [];
+  try { for (const sh of X(get('xl/workbook.xml')).getElementsByTagName('sheet')){ const t = rels[sh.getAttribute('r:id')]; if (!t) continue; const path = t.startsWith('/') ? t.slice(1) : 'xl/' + t.replace(/^\.\//, ''); if (get(path)) sheets.push({ name: sh.getAttribute('name'), path }); } } catch (e) {}
+  if (!sheets.length) files.filter(x => /^xl\/worksheets\/sheet\d+\.xml$/i.test(x.name)).forEach((x, i) => sheets.push({ name: 'Trang ' + (i + 1), path: x.name }));
+  sheets.forEach(s => { s.rows = docRows(X(get(s.path)), ss); phanTich(s); });
+  return { ten: f.name.replace(/\.xlsx?$/i, ''), files, sheets, si: 0, daDien: {} };
+}
+/* tìm dòng tiêu đề, cột họ tên (+ cột tên tách riêng như vnEdu: C họ đệm, D tên), nhãn cột, các dòng học sinh */
+function phanTich(s){
+  const rows = s.rows; let hr = rows.slice(0, 30).findIndex(r => (r || []).some(LA_TEN));
+  if (hr < 0){ Object.assign(s, { hr: null, ds: [], labs: [] }); return s; }
+  const H = rows[hr] || [], D = rows[hr + 1] || [], U = rows[hr - 1] || [], nameCol = H.findIndex(LA_TEN);
+  const sub = !String(D[nameCol] ?? '').trim() && D.some(x => String(x ?? '').trim());
+  const n = Math.max(...rows.slice(hr, hr + 3).map(r => (r || []).length)); let carry = '';
+  const labs = Array.from({ length: n }, (_, i) => { const h = String(H[i] ?? '').replace(/\s+/g, ' ').trim(), d = sub ? String(D[i] ?? '').replace(/\s+/g, ' ').trim() : ''; if (h) carry = h; return d ? ((h || carry) && (h || carry) !== d ? `${h || carry} ${d}` : d) : (h || String(U[i] ?? '').trim()); });
+  const dau = hr + (sub ? 2 : 1), ds = [];
+  for (let r = dau; r < rows.length; r++){ const t = String((rows[r] || [])[nameCol] ?? '').trim(); if (!t) continue; if (/^(tổng|cộng|giáo viên|người lập|hiệu trưởng|giám thị|ghi chú)/i.test(t)) break; ds.push(r); }
+  let nameCol2 = null; const j = nameCol + 1;
+  if (!labs[j] && ds.length && ds.filter(r => String((rows[r] || [])[j] ?? '').trim()).length >= ds.length * .8) nameCol2 = j;
+  const tieuDe = rows.slice(0, hr).map(r => (r || []).filter(x => typeof x === 'string').join(' ')).join(' ');
+  Object.assign(s, { hr, nameCol, nameCol2, labs, dau, ds, sub, lop: khoaLop(s.name) || khoaLop(tieuDe), tieuDe });
+  return s;
+}
+const tenDong = (s, ri) => [s.nameCol, s.nameCol2].filter(x => x != null).map(j => String((s.rows[ri] || [])[j] ?? '').trim()).filter(Boolean).join(' ').replace(/\s+/g, ' ');
+/* trang KHTN: tên trang / tiêu đề có «khoa học tự nhiên»; loại hẳn trang môn khác (HĐTN-HN, Toán…) dù cùng mẫu cột */
+const MON_KHAC = /hdtn|hđtn|trai_nghiem|trải\s*nghiệm|huong_nghiep|hướng\s*nghiệp|toan|toán|ngu_van|ngữ\s*văn|tieng_anh|tiếng\s*anh|lich_su|lịch\s*sử|gdcd|cong_nghe|công\s*nghệ|tin_hoc|tin\s*học/i;
+const laKHTN = s => s.hr != null && !MON_KHAC.test(s.name) && (/khoa_hoc_tu_nhien|khoa\s*học\s*tự\s*nhiên|khtn|tự\s*nhiên|tu\s*nhien/i.test(s.name + ' ' + s.tieuDe) || (!/[a-z]{4,}/i.test(s.name.replace(/\d+a\d+/i, '')) && s.labs.some(l => /đđggk|đđgck/i.test(l))));
+function doCot(c, s){
+  const map = {}, txn = [];
+  s.labs.forEach((l, i) => { if (i === s.nameCol || i === s.nameCol2) return; const t = l.toLowerCase(); let mm;
+    if ((mm = t.match(/(tx|thường\s*xuyên)\D*(\d+)\s*$/))) txn.push([+mm[2], i]);
+    else if (/(^|\W)(đđg)?gk(\W|$)|giữa\s*(kỳ|kì|học)/.test(t) && map.gk == null) map.gk = i;
+    else if (/(^|\W)(đđg)?ck(\W|$)|cuối\s*(kỳ|kì|học)/.test(t) && map.ck == null) map.ck = i; });
+  txn.sort((a, b) => a[0] - b[0]).forEach(([k, i]) => { if (k >= 1 && k <= c.cfg.soTX && map['tx' + (k - 1)] == null) map['tx' + (k - 1)] = i; });
+  s.map = s.map || map; return s.map;
+}
+/* ghép dòng trong file với mã HS: theo họ tên (đã lưu trên máy) — không có họ tên thì theo thứ tự */
+function ghepDong(c, s){
+  const T = TEN[c.id] || {};
+  if (Object.keys(T).length){ const idx = {}; for (const ma in T) (idx[khoaTen(T[ma])] = idx[khoaTen(T[ma])] || []).push(ma); const dung = new Set();
+    return s.ds.map(ri => { const L = (idx[khoaTen(tenDong(s, ri))] || []).filter(m => !dung.has(m)); const ma = L[0] || null; if (ma) dung.add(ma); return [ri, ma]; }); }
+  return s.ds.map((ri, k) => [ri, (c.hs[k] || {}).ma || null]);
+}
+function timTrang(m, c){ const k = khoaLop(c.ten); if (!k) return -1; let best = -1; m.sheets.forEach((s, i) => { if (best < 0 && laKHTN(s) && s.lop === k) best = i; }); return best; }
+const lopCuaTrang = s => laKHTN(s) ? Object.values(DB.classes).find(c => s.lop && khoaLop(c.ten) === s.lop) || null : null;
+/* điền một trang (giữ nguyên mẫu): chỉ ghi số vào các ô của cột đã chọn */
+function dienTrang(m, si, c, hk, chiTrong){
+  const sh = m.sheets[si], f = m.files.find(x => x.name === sh.path), X = new DOMParser().parseFromString(new TextDecoder().decode(f.data), 'application/xml'), N = X.documentElement.namespaceURI;
+  const sd = X.getElementsByTagName('sheetData')[0]; let n = 0, bo = 0, khong = 0;
+  const rowEl = r => { for (const e of sd.getElementsByTagName('row')) if (+e.getAttribute('r') === r) return e; const e = X.createElementNS(N, 'row'); e.setAttribute('r', r); let ref = null; for (const x of sd.getElementsByTagName('row')) if (+x.getAttribute('r') > r){ ref = x; break; } sd.insertBefore(e, ref); return e; };
+  const cellEl = (row, ci, r) => { const ref = colName(ci) + r; for (const e of row.getElementsByTagName('c')) if (e.getAttribute('r') === ref) return e; const e = X.createElementNS(N, 'c'); e.setAttribute('r', ref); let nx = null; for (const x of row.getElementsByTagName('c')) if (colIdx(x.getAttribute('r').replace(/\d+/g, '')) > ci){ nx = x; break; } row.insertBefore(e, nx); return e; };
+  ghepDong(c, sh).forEach(([ri, ma]) => { if (!ma){ khong++; return; } const kq = ketQua(c, hk, ma), val = { gk: kq.gk.v, ck: kq.ck.v }; kq.tx.forEach((v, i) => val['tx' + i] = v);
+    for (const key in sh.map){ const ci = sh.map[key]; if (ci == null || ci < 0) continue; const v = val[key]; if (v == null) continue;
+      const cu = String((sh.rows[ri] || [])[ci] ?? '').trim(); if (chiTrong && cu !== ''){ bo++; continue; }
+      const ce = cellEl(rowEl(ri + 1), ci, ri + 1); ce.removeAttribute('t'); while (ce.firstChild) ce.removeChild(ce.firstChild); const vv = X.createElementNS(N, 'v'); vv.textContent = String(v); ce.appendChild(vv);
+      (sh.rows[ri] = sh.rows[ri] || [])[ci] = v; n++; } });
+  let x = new XMLSerializer().serializeToString(X); if (!x.startsWith('<?xml')) x = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\r\n' + x;
+  m.files = m.files.map(y => y === f ? { name: y.name, data: new TextEncoder().encode(x) } : y);
+  if (n) m.daDien[sh.name] = { lop: c.ten, n, hk, luc: new Date().toLocaleTimeString('vi-VN') };
+  return { n, bo, khong };
+}
+/* bỏ chuỗi tính cũ, bắt Excel tính lại cột ĐTB (công thức) khi mở */
+function tinhLaiKhiMo(files){
+  const td = new TextDecoder(), te = new TextEncoder();
+  files = files.filter(x => x.name.toLowerCase() !== 'xl/calcchain.xml');
+  const sua1 = (ten, f) => { const x = files.find(y => y.name.toLowerCase() === ten); if (x) x.data = te.encode(f(td.decode(x.data))); };
+  sua1('[content_types].xml', t => t.replace(/<Override[^>]*calcChain[^>]*\/>/i, ''));
+  sua1('xl/_rels/workbook.xml.rels', t => t.replace(/<Relationship[^>]*calcChain[^>]*\/>/i, ''));
+  sua1('xl/workbook.xml', t => /<calcPr\b/.test(t) ? t.replace(/<calcPr\b([^>]*?)(\/?)>/, (m0, a, sl) => `<calcPr${a.replace(/\sfullCalcOnLoad="[^"]*"/, '')} fullCalcOnLoad="1"${sl}>`)
+    : t.replace(/(<\/definedNames>|<\/sheets>)(?![\s\S]*<\/definedNames>)/, '$1<calcPr fullCalcOnLoad="1"/>'));
+  return files;
+}
+VIEW.vnedu = c => {
+  const m = UI.mau, hk = UI.hk;
+  let ds = '', ket = '';
+  if (m){
+    const kh = m.sheets.map((s, i) => [s, i]).filter(([s]) => s.hr != null);
+    ds = `<p class="small" style="margin:12px 0 4px"><b>Các trang trong file «${esc(m.ten)}»</b> — bấm để chọn (trang ⚛️ là KHTN):</p>
+      <div class="row">${kh.map(([s, i]) => { const lc = lopCuaTrang(s), dd = m.daDien[s.name]; return `<button class="pm ${i === m.si ? 'on li' : 'li'}" style="font-size:13px;padding:6px 10px" data-act="chonTrang" data-i="${i}">${laKHTN(s) ? '⚛️' : '📄'} ${esc(s.lop ? s.lop.toUpperCase() : s.name)} · ${s.ds.length} em${lc ? '' : ' · <span style="color:#b45309">chưa có lớp</span>'}${dd ? ' · ✔' : ''}</button>`; }).join('')}</div>
+      <div class="row" style="margin-top:8px"><button class="btn" data-act="taoLopTatCa">👥 Tạo / cập nhật lớp cho tất cả trang KHTN (${kh.filter(([s]) => laKHTN(s)).length} trang)</button><button class="btn pri" data-act="dienTatCa">✍️ Điền ${HKTEN[hk]} cho tất cả lớp đã có</button><button class="btn ok" data-act="taiFile">⬇ Tải file đã điền (${Object.keys(m.daDien).length} trang)</button><button class="btn sm" data-act="boMau">Đóng file</button></div>`;
+    const sh = m.sheets[m.si];
+    if (sh && sh.hr != null){
+      const K = KHOA_COT(c); doCot(c, sh); const G = ghepDong(c, sh), coTen = Object.keys(TEN[c.id] || {}).length, khop = G.filter(x => x[1]).length;
+      const lech = khoaLop(c.ten) && sh.lop && khoaLop(c.ten) !== sh.lop;
+      ket = card('🧩', `Trang «${esc(sh.name)}» ↔ lớp đang chọn «${esc(c.ten)}» — ${HKTEN[hk]}`, `
+        <div class="row" style="margin-bottom:8px">${hkSeg()}<span class="pill">Tiêu đề dòng ${sh.hr + 1}${sh.sub ? '–' + (sh.hr + 2) : ''}</span><span class="pill">${sh.ds.length} học sinh trong trang</span><span class="pill">${c.hs.length} mã trong lớp</span><span class="pill">${coTen ? 'ghép theo họ tên' : 'ghép theo thứ tự'}</span></div>
+        ${lech ? `<div class="hint bad">⛔ Trang này là lớp <b>${esc(sh.lop.toUpperCase())}</b> nhưng đang chọn lớp <b>${esc(c.ten)}</b> — đổi lớp ở ô chọn lớp góc trên.</div>` : ''}
+        ${khop === sh.ds.length ? `<div class="hint ok">✔ Ghép được đủ ${khop}/${sh.ds.length} em${coTen ? ' theo họ tên' : ''}.</div>` : `<div class="hint ${coTen ? 'bad' : 'warn'}">${coTen ? `⛔ Chỉ ghép được ${khop}/${sh.ds.length} em theo họ tên — em chưa ghép được sẽ <b>không điền</b>.` : `⚠️ Lớp chưa có họ tên trên máy → ghép theo thứ tự (dòng đầu = HS01). Nên bấm «Tạo lại danh sách lớp theo trang này» để ghép theo họ tên.`}</div>`}
+        <p class="small" style="margin:10px 0 4px"><b>Cột trong trang sẽ được điền</b> (app tự dò; chọn «— không điền —» cho cột muốn giữ nguyên):</p>
+        <div class="row">${K.map(([k, l]) => `<label class="fld" style="min-width:150px">${l}<select data-mapk="${k}"><option value="-1">— không điền —</option>${sh.labs.map((t, i) => i === sh.nameCol || i === sh.nameCol2 ? '' : `<option value="${i}" ${sh.map[k] === i ? 'selected' : ''}>${colName(i)}: ${esc(t || '(trống)')}</option>`).join('')}</select></label>`).join('')}</div>
+        <div class="tbl" style="margin-top:10px;max-height:340px"><table class="t"><thead><tr><th>Mã HS</th><th class="l">Họ tên trong file</th>${K.map(([k, l]) => sh.map[k] != null && sh.map[k] >= 0 ? `<th>${l}<br><span class="small muted">cột ${colName(sh.map[k])}: đang có → điền</span></th>` : '').join('')}</tr></thead><tbody>
+        ${G.slice(0, 60).map(([ri, ma]) => { const kq = ma ? ketQua(c, hk, ma) : null, val = kq ? { gk: kq.gk.v, ck: kq.ck.v, ...Object.fromEntries(kq.tx.map((v, i) => ['tx' + i, v])) } : {};
+          return `<tr><td>${ma ? `<b>${ma}</b>` : '<span class="pill" style="background:#fee2e2;color:#991b1b">chưa ghép</span>'}</td><td class="l">${esc(tenDong(sh, ri))}</td>${K.map(([kk]) => { const ci = sh.map[kk]; if (ci == null || ci < 0) return ''; const cu = (sh.rows[ri] || [])[ci], v = val[kk]; return `<td class="${v == null ? 'thieu' : ''}">${cu === '' || cu == null ? '<span class="muted">·</span>' : fmt(cu)} → <b>${v == null ? '·' : fmt(v)}</b></td>`; }).join('')}</tr>`; }).join('')}</tbody></table></div>
+        <div class="row" style="margin-top:10px"><label class="row small"><input type="checkbox" id="chiTrong"> Chỉ điền ô đang trống trong file (không ghi đè điểm đã có)</label></div>
+        <div class="row" style="margin-top:8px"><button class="btn pri big" data-act="dienTrang">✍️ Điền trang này</button><button class="btn ok big" data-act="taiFile">⬇ Tải file đã điền</button><button class="btn" data-act="taoLopTuMau">👥 Tạo lại danh sách lớp theo trang này</button></div>
+        <p class="small muted" style="margin:6px 0 0">«đang có → điền»: · = ô trống. Ô app chưa có điểm (·) giữ nguyên trong file. Cột ĐTB (công thức) Excel tự tính lại khi mở. Họ tên chỉ hiện trên máy này.</p>`);
+    }
+  }
+  return `<div class="cols">${card('📗', 'Điền điểm vào file Excel của vnEdu', `
+    <ol class="small" style="padding-left:18px;margin:0 0 10px"><li>Trên vnEdu tải sổ điểm (VD «Sổ điểm các môn tôi dạy», mỗi lớp một trang) hoặc file mẫu nhập điểm (.xlsx).</li><li>Kéo thả vào ô dưới → <b>👥 Tạo / cập nhật lớp cho tất cả trang KHTN</b> (lần đầu) → nhập hoặc đọc điểm 3 phân môn.</li><li><b>✍️ Điền … cho tất cả lớp</b> → <b>⬇ Tải file đã điền</b> → up lên vnEdu → kiểm lại trên vnEdu.</li></ol>
+    <label class="drop" id="mauDrop"><div style="font-size:34px">📗</div><b>Kéo thả file Excel (.xlsx) của vnEdu vào đây</b><br><span class="muted small">hoặc bấm để chọn · file chỉ đọc trên máy này</span><input type="file" id="mauFile" accept=".xlsx,.xlsm" class="hidden"></label>
+    ${ds}
+    <div class="hint warn">🔐 File vnEdu có họ tên thật: app chỉ đọc trên trình duyệt máy này; họ tên chỉ giữ trên máy (để ghép đúng em), không vào bản sao lưu, không vào mã gửi đi. File .xls đời cũ: mở bằng Excel → Lưu thành .xlsx. Không gửi file có tên thật cho trợ lý AI.</div>`)}
+  ${card('⬇', 'Hoặc xuất bảng Excel theo mã', `<p class="small">Bảng mã HS + TX1…, ĐĐGgk, ĐĐGck của KHTN (${HKTEN[hk]}) để dán vào vnEdu theo đúng thứ tự.</p><div class="row">${hkSeg()}<button class="btn" data-act="xuatTong">⬇ Excel bảng tổng hợp</button></div>`)}</div>${ket}`;
+};
+
+{ const goc = VIEW.vnedu; VIEW.vnedu = c => (VN && !c.demo ? `<section class="card">${vnStrip(c)}</section>` : '') + goc(c); }
+{ const goc = VIEW.lop; VIEW.lop = c => DB.tuGoi ? lopChiXem(c) : goc(c) + khoaCard() + phatHanhCard(); }
+/* ---- đọc bảng điểm phân môn của tổ (cột HÓA · LÝ · SINH · TỔNG) ---- */
+const COT_PM = { hoa: /^h\s*[oóòỏõọ]\s*a|^hoá|^hóa/i, li: /^(l\s*[ýíyi]|vật\s*l[ýí])/i, sinh: /^sinh/i, tong: /^t[ổo]ng|^cộng/i };
+function phanTichBD(s){
+  const cot = {}; (s.labs || []).forEach((l, i) => { const t = l.normalize('NFC').trim(); for (const k in COT_PM) if (cot[k] == null && COT_PM[k].test(t)) { cot[k] = i; break; } });
+  const t = (s.tieuDe + ' ' + s.name).toLowerCase(); let dot = 'gk', hk = 'HK1';
+  if (/cuối\s*k[iìỳy]\s*(ii|2)\b|cuối\s*năm|ck\s*(ii|2)\b|hk\s*(ii|2)\b|học\s*k[iìỳy]\s*(ii|2)\b/.test(t)){ dot = 'ck'; hk = 'HK2'; }
+  else if (/cuối\s*k[iìỳy]\s*(i|1)\b|ck\s*(i|1)\b/.test(t)){ dot = 'ck'; hk = 'HK1'; }
+  if (/giữa\s*k[iìỳy]\s*(ii|2)\b|gk\s*(ii|2)\b/.test(t)){ dot = 'gk'; hk = 'HK2'; }
+  else if (/giữa\s*k[iìỳy]\s*(i|1)\b|gk\s*(i|1)\b/.test(t)){ dot = 'gk'; hk = 'HK1'; }
+  s.cot = cot; s.goiY = { dot, hk }; return s;
+}
+function bdChon(b, i){ const s = b.sheets[i]; b.chon[i] = b.chon[i] || { lop: (lopCuaTrang(s) || {}).id || '', dot: s.goiY.dot, hk: s.goiY.hk }; return b.chon[i]; }
+function bdXem(c, s){
+  const G = ghepDong(c, s), out = [];
+  G.forEach(([ri, ma]) => { const r = s.rows[ri] || [], v = {}; ['hoa', 'li', 'sinh', 'tong'].forEach(k => v[k] = s.cot[k] != null ? soVN(r[s.cot[k]]) : null);
+    const tinh = ['hoa', 'li', 'sinh'].every(k => v[k] != null) ? r1(v.hoa + v.li + v.sinh) : null;
+    out.push({ ri, ma, v, tinh, lech: v.tong != null && tinh != null && Math.abs(v.tong - tinh) > 0.051 }); });
+  return out;
+}
+function bangDiemCard(c){
+  const b = UI.bd;
+  let body = `<p class="small">Tổ đã có file Excel bảng điểm từng lớp (cột <b>HỌ VÀ TÊN · HÓA · LÝ · SINH · TỔNG</b>)? Kéo thả vào đây — app đọc điểm 3 phần, <b>ghép đúng em theo họ tên</b> (lớp phải tạo từ file vnEdu để có họ tên trên máy), ghi vào giữa kì hoặc cuối kì. Không phải gõ lại.</p>
+    <label class="drop" id="bdDrop"><div style="font-size:30px">📊</div><b>Kéo thả file bảng điểm của tổ (.xlsx)</b><br><span class="muted small">một file nhiều trang (mỗi lớp một trang) cũng được · chỉ đọc trên máy này</span><input type="file" id="bdFile" accept=".xlsx,.xlsm" class="hidden"></label>`;
+  if (b){
+    const tr = b.sheets.map((s, i) => [s, i]).filter(([s]) => s.hr != null && s.cot && (s.cot.hoa != null || s.cot.li != null || s.cot.sinh != null));
+    if (!tr.length) body += '<div class="hint bad">⛔ Không thấy trang nào có cột «Họ và tên» và cột HÓA / LÝ / SINH.</div>';
+    body += tr.map(([s, i]) => { const ch = bdChon(b, i), cc = DB.classes[ch.lop], X = cc ? bdXem(cc, s) : [], khop = X.filter(x => x.ma).length, lech = X.filter(x => x.lech).length, coTen = cc && Object.keys(TEN[cc.id] || {}).length;
+      const mx = { hoa: 0, li: 0, sinh: 0 }; X.forEach(x => PMID.forEach(p => { if (x.v[p] != null) mx[p] = Math.max(mx[p], x.v[p]); }));
+      const vuot = cc && cc.cfg.kieu === 'phan' ? PMID.filter(p => mx[p] > (+cc.cfg.phanMax[p] || 0)) : [];
+      return `<div class="card" style="margin:10px 0;padding:12px;background:#fbfefe"><div class="row"><b>📄 ${esc(s.name)}</b><span class="pill">${s.ds.length} em</span><span class="pill">cột: ${['hoa', 'li', 'sinh', 'tong'].map(k => s.cot[k] != null ? `${{ hoa: 'Hóa', li: 'Lý', sinh: 'Sinh', tong: 'Tổng' }[k]} ${colName(s.cot[k])}` : '').filter(Boolean).join(' · ')}</span></div>
+        <div class="row" style="margin-top:8px"><label class="fld">Vào lớp<select data-bd="${i}" data-k="lop"><option value="">— chọn lớp —</option>${Object.values(DB.classes).map(x => `<option value="${x.id}" ${x.id === ch.lop ? 'selected' : ''}>${esc(x.ten)}</option>`).join('')}</select></label>
+          <label class="fld">Đợt<select data-bd="${i}" data-k="dot"><option value="gk" ${ch.dot === 'gk' ? 'selected' : ''}>Giữa kì (ĐĐGgk)</option><option value="ck" ${ch.dot === 'ck' ? 'selected' : ''}>Cuối kì (ĐĐGck)</option></select></label>
+          <label class="fld">Học kì<select data-bd="${i}" data-k="hk"><option value="HK1" ${ch.hk === 'HK1' ? 'selected' : ''}>Học kì I</option><option value="HK2" ${ch.hk === 'HK2' ? 'selected' : ''}>Học kì II</option></select></label></div>
+        ${cc ? `${khop === s.ds.length ? `<div class="hint ok">✔ Ghép được ${khop}/${s.ds.length} em ${coTen ? 'theo họ tên' : 'theo thứ tự'}.</div>` : `<div class="hint ${coTen ? 'bad' : 'warn'}">${coTen ? `⛔ Ghép theo họ tên được ${khop}/${s.ds.length} em — em không ghép được sẽ bỏ qua (kiểm chính tả họ tên trong file tổ).` : '⚠️ Lớp chưa có họ tên trên máy → ghép theo thứ tự. Nên tạo lớp từ file vnEdu trước.'}</div>`}
+          ${lech ? `<div class="hint warn">⚠️ ${lech} dòng cột TỔNG trong file khác tổng Hóa + Lý + Sinh — app dùng điểm 3 phần, thầy cô kiểm lại.</div>` : ''}
+          ${vuot.length ? `<div class="hint bad">⛔ Có điểm phần vượt điểm tối đa đang đặt (${vuot.map(p => `${pmOf(p)[1]} cao nhất ${fmt(mx[p])} > ${fmt(cc.cfg.phanMax[p])}`).join('; ')}) — sửa điểm tối đa ở thẻ 🏫 trước khi ghi.</div>` : ''}` : '<div class="hint warn">Chọn lớp để ghép.</div>'}</div>`; }).join('');
+    if (tr.length) body += `<div class="row"><button class="btn ok big" data-act="bdGhi">✔ Ghi điểm 3 phân môn vào app</button><button class="btn sm" data-act="bdBo">Đóng file</button></div>`;
+  }
+  return card('📊', 'Đọc bảng điểm phân môn của tổ (HÓA · LÝ · SINH)', body);
+}
+/* ================= HÀNH ĐỘNG ================= */
+function lopMau(){
+  const R = rng(2026), c = sua(lopMoi({ ten: '8A (mẫu)', khoi: 8, siSo: 36 })); c.demo = true;
+  TEN[c.id] = {}; c.hs.forEach((h, i) => TEN[c.id][h.ma] = 'Học sinh mẫu ' + pad2(i + 1)); c.hienTen = true; if (!CHUP) LS.set(KEYTEN, TEN);
+  ['HK1'].forEach(hk => c.hs.forEach((h, k) => { const r = dong(c, hk, h.ma), g = 4 + R() * 6, q = x => Math.round(Math.max(0, Math.min(10, x)) * 4) / 4;
+    for (let i = 0; i < c.cfg.soTX; i++) if (R() < .95) r.tx[i] = r1(Math.max(2, Math.min(10, g + (R() - .5) * 3)));
+    PMID.forEach(p => { const mx = c.cfg.phanMax[p]; if (R() < .93) r.gk[p] = q(mx * Math.min(1, Math.max(.15, g / 10 + (R() - .5) * .3))); if (R() < (p === 'sinh' ? .8 : .95)) r.ck[p] = q(mx * Math.min(1, Math.max(.15, g / 10 + (R() - .5) * .3))); }); }));
+  return c;
+}
+const ACT = {
+  tab(el){ UI.tab = el.dataset.id; render(false); }, go(el){ UI.tab = el.dataset.id; render(false); },
+  hk(el){ UI.hk = el.dataset.v; render(); },
+  cot(el){ UI.cot = el.dataset.v; LS.set('dkhtn_cot', UI.cot); render(); ding('tap'); if (UI.cot !== 'all'){ const i = $$('#view input.sc').find(x => !x.value) || $$('#view input.sc')[0]; if (i){ i.focus(); i.select(); } } },
+  pm(el){ UI.pm = el.dataset.v; UI.maDiem = ''; render(); ding('tap'); if (UI.tab === 'nhap') hoiMon(); },
+  doiMon(){ scrollTo(0, 0); toast('Chọn đúng phân môn của mình ở hàng nút phía trên', 'warn'); },
+  suaMon(){ const c = cls(); UI.suaOK[khoaMon(c, UI.hk, UI.pm)] = true; render(); ding('ok'); toast(`✏️ Đang sửa điểm ${pmOf(UI.pm)[1]} lớp ${esc(c.ten)}`, 'ok'); },
+  kieu(el){ cls().cfg.kieu = el.dataset.v; save(); render(); },
+  async lopMoi(){
+    const r = await modal(`<h3>＋ Tạo lớp</h3><div class="grid">${fld('Tên lớp', '<input id="nTen" placeholder="VD: 8A1">')}${fld('Khối', '<select id="nKhoi"><option value="8">Khối 8</option><option value="9">Khối 9</option></select>')}${fld('Sĩ số', '<input id="nSi" type="number" min="1" max="70" value="35">')}</div><p class="small muted">Có file mẫu vnEdu? Tạo lớp xong vào thẻ 📗, kéo file vào → «Tạo lại danh sách lớp theo file này» để đúng thứ tự.</p>`,
+      [{ label: 'Huỷ', v: 0 }, { label: 'Tạo lớp', v: 1, cls: 'pri' }], () => ({ ten: $('#nTen').value.trim(), khoi: $('#nKhoi').value, siSo: Math.min(70, Math.max(1, +$('#nSi').value || 35)) }));
+    if (!r || !r.v) return; const c = sua(lopMoi({ ...r.d, ten: r.d.ten || 'Lớp ' + r.d.khoi })); DB.classes[c.id] = c; DB.cur = c.id; save(); UI.tab = 'lop'; render(false); ding('win'); confetti();
+  },
+  lopMau(){ const old = Object.values(DB.classes).find(x => x.demo); if (old) DB.cur = old.id; else { const c = lopMau(); DB.classes[c.id] = c; DB.cur = c.id; } save(); UI.tab = 'tong'; render(false); ding('win'); },
+  async xoaLop(){ const c = cls(); const ok = await modal(`<h3>Xoá lớp ${esc(c.ten)}?</h3><p>Mọi điểm của lớp này mất khỏi trình duyệt. Nên Sao lưu trước.</p>`, [{ label: 'Không', v: 0 }, { label: 'Xoá', v: 1, cls: 'bad' }]); if (!ok) return; delete DB.classes[c.id]; delete TEN[c.id]; LS.set(KEYTEN, TEN); DB.cur = Object.keys(DB.classes)[0] || null; save(); render(false); },
+  async xoaTen(){ const c = cls(); const ok = await modal('<h3>Xoá họ tên khỏi máy này?</h3><p>App quay về chỉ dùng mã HS. Điểm không đổi.</p>', [{ label: 'Không', v: 0 }, { label: 'Xoá họ tên', v: 1, cls: 'bad' }]); if (!ok) return; delete TEN[c.id]; LS.set(KEYTEN, TEN); c.hienTen = false; save(); render(); },
+  async siSo(){ const c = cls(), n = Math.min(70, Math.max(1, +$('#siSo').value || c.hs.length));
+    if (n < c.hs.length){ const ok = await modal(`<h3>Bớt ${c.hs.length - n} mã cuối?</h3><p>Điểm của các mã đó sẽ không còn hiện.</p>`, [{ label: 'Không', v: 0 }, { label: 'Bớt', v: 1, cls: 'bad' }]); if (!ok) return; c.hs = c.hs.slice(0, n); }
+    while (c.hs.length < n) c.hs.push({ ma: 'HS' + pad2(c.hs.length + 1) }); save(); render(); toast(`Lớp có ${n} mã`, 'ok'); },
+  saoLuu(){ const data = { app: 'So Diem KHTN', v: 1, ngay: new Date().toISOString(), db: DB }; download(new Blob([JSON.stringify(data)], { type: 'application/json' }), `So Diem KHTN - sao luu ${new Date().toISOString().slice(0, 10)}.json`); ding('ok'); toast('💾 Đã tải bản sao lưu (không có họ tên) — cất vào USB/Drive', 'ok'); },
+  moSaoLuu(){ $('#fileIn').click(); },
+  tatTieng(){ DB.muted = !DB.muted; save(); renderTop(); },
+  async chiaSeLop(){ const c = cls(), ma = maHoaMa('DKHTN-LOP', { k: 'DKHTN-LOP', v: 1, cls: c.id, ten: c.ten, khoi: c.khoi, namHoc: c.namHoc, n: c.hs.length, cfg: c.cfg });
+    await modal(`<h3>📦 Chia sẻ lớp ${esc(c.ten)}</h3><p class="small">Gửi mã này cho thầy cô phân môn: họ mở app → thẻ 📤 → dán vào ô «Nhận» → có đúng lớp này (mã HS, cách tính; không họ tên, không điểm).</p><textarea class="out" readonly id="lopOut">${ma}</textarea><div class="row" style="margin-top:6px"><button class="btn sm pri" data-act="chepMa" data-id="lopOut">📋 Chép mã</button></div>`, [{ label: 'Đóng', v: 1 }]); },
+  taoMaDiem(){ const c = cls(); UI.maDiem = maDiem(c, UI.hk, UI.pm); render(); ding('ok'); },
+  async chepMa(el){ const t = ($('#' + el.dataset.id) || {}).value || ''; const ok = await copyText(t); ding(ok ? 'ok' : 'no'); toast(ok ? '📋 Đã chép — dán vào Zalo gửi đi' : 'Bôi đen mã rồi chép tay', ok ? 'ok' : 'warn'); },
+  taiMa(el){ download(new Blob([JSON.stringify({ ma: ($('#' + el.dataset.id) || {}).value || '' })], { type: 'application/json' }), safeName(el.dataset.ten || 'Ma diem') + '.json'); },
+  async nhanMa(){ await nhanMa(docMa(($('#maIn') || {}).value || '')); },
+  async xuatTong(){
+    const c = cls(), hk = UI.hk, cf = c.cfg, coTen = c.hienTen && Object.keys(TEN[c.id] || {}).length;
+    const head = ['STT', 'Mã HS', ...(coTen ? ['Họ và tên'] : []), ...Array.from({ length: cf.soTX }, (_, i) => `ĐĐGtx${i + 1} (${pmOf(cf.txPM[i])[1]})`), 'ĐĐGgk', 'ĐĐGck', 'ĐTBmhk (tham khảo)'];
+    const rows = c.hs.map((h, i) => { const k = ketQua(c, hk, h.ma); return [{ v: i + 1, s: 4 }, h.ma, ...(coTen ? [tenOf(c, h.ma)] : []), ...k.tx.map(v => ({ v: v ?? '', s: 4 })), { v: k.gk.v ?? '', s: 4 }, { v: k.ck.v ?? '', s: 4 }, { v: k.tb ?? '', s: 4 }]; });
+    const pmSheet = p => ({ name: pmOf(p)[1], head: 4, cols: [6, 12, 10, 10], rows: [[{ v: `${pmOf(p)[1].toUpperCase()} — ${HKTEN[hk]} — lớp ${c.ten}`, s: 3 }], [{ v: cf.kieu === 'phan' ? `Điểm phần (tối đa ${fmt(cf.phanMax[p])})` : 'Thang 10', s: 0 }], [], ['STT', 'Mã HS', 'Giữa kì', 'Cuối kì'], ...c.hs.map((h, i) => { const r = dongXem(c, hk, h.ma); return [{ v: i + 1, s: 4 }, h.ma, { v: num((r.gk || {})[p]) ?? '', s: 4 }, { v: num((r.ck || {})[p]) ?? '', s: 4 }]; })] });
+    const blob = await buildXlsx([{ name: 'KHTN ' + hk, head: 4, freeze: 4, cols: [6, 12, ...(coTen ? [26] : []), ...Array.from({ length: cf.soTX }, () => 14), 10, 10, 14], rows: [[{ v: `ĐIỂM KHTN — ${HKTEN[hk].toUpperCase()} — LỚP ${c.ten} — NĂM HỌC ${c.namHoc}`, s: 3 }], [{ v: `Gộp 3 phân môn: ${cf.kieu === 'phan' ? 'cộng điểm phần' : 'trung bình theo trọng số'} · bản nháp từ Sổ Điểm KHTN, thầy cô kiểm trước khi up`, s: 0 }], [], head, ...rows] }, ...PMID.map(pmSheet)]);
+    download(blob, safeName(`Diem KHTN ${hk} - Lop ${c.ten}`) + '.xlsx'); ding('ok'); toast('⬇ Đã tải Excel bảng tổng hợp', 'ok');
+  },
+  chonTrang(el){ UI.mau.si = +el.dataset.i; const s = UI.mau.sheets[UI.mau.si], lc = lopCuaTrang(s); if (lc && lc.id !== DB.cur){ DB.cur = lc.id; save(); } render(); },
+  dienTrang(){
+    const c = cls(), m = UI.mau; if (!m) return; const s = m.sheets[m.si];
+    if (khoaLop(c.ten) && s.lop && khoaLop(c.ten) !== s.lop) return toast(`Trang này là lớp ${esc(s.lop.toUpperCase())}, đang chọn lớp ${esc(c.ten)} — đổi lớp trước`, 'bad');
+    const kq = dienTrang(m, m.si, c, UI.hk, ($('#chiTrong') || {}).checked); ding('ok'); render();
+    toast(`✍️ Trang «${esc(s.name)}»: điền ${kq.n} ô${kq.bo ? `, giữ ${kq.bo} ô đã có` : ''}${kq.khong ? `, ${kq.khong} em chưa ghép` : ''} — bấm ⬇ Tải file khi xong`, kq.khong ? 'warn' : 'ok');
+  },
+  async dienTatCa(){
+    const m = UI.mau; if (!m) return; const hk = UI.hk, kq = [];
+    m.sheets.forEach((s, i) => { if (!laKHTN(s)) return; const c = lopCuaTrang(s); if (!c) { kq.push([s.name, null]); return; } doCot(c, s); kq.push([s.name, c.ten, dienTrang(m, i, c, hk, false)]); });
+    render(); ding('win');
+    await modal(`<h3>✍️ Đã điền ${HKTEN[hk]}</h3><div class="tbl"><table class="t"><thead><tr><th>Trang</th><th>Lớp trong app</th><th>Ô đã điền</th><th>Em chưa ghép</th></tr></thead><tbody>${kq.map(([t, l, r]) => `<tr><td class="l">${esc(t)}</td><td>${l ? esc(l) : '<span class="pill" style="background:#fef3c7">chưa có lớp</span>'}</td><td>${r ? r.n : '—'}</td><td>${r ? (r.khong || '') : ''}</td></tr>`).join('')}</tbody></table></div><p class="small">Bấm <b>⬇ Tải file đã điền</b> để lấy file up vnEdu.</p>`, [{ label: 'Đóng', v: 0 }, { label: '⬇ Tải file', v: 1, cls: 'ok' }]).then(v => { if (v) ACT.taiFile(); });
+  },
+  async taiFile(){
+    const m = UI.mau; if (!m) return; if (!Object.keys(m.daDien).length) return toast('Chưa điền trang nào — bấm «Điền trang này» hoặc «Điền … cho tất cả lớp»', 'warn');
+    const blob = await zipFiles(tinhLaiKhiMo(m.files.map(x => ({ name: x.name, data: x.data }))), 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    download(blob, safeName(m.ten + ' - da dien KHTN') + '.xlsx'); ding('win'); confetti(); toast(`⬇ Đã tải file (${Object.keys(m.daDien).length} trang đã điền) — mở kiểm lại rồi up vnEdu`, 'ok');
+  },
+  chonLop(el){ if (DB.classes[el.dataset.id]){ DB.cur = el.dataset.id; save(); render(); ding('tap'); } },
+  dsDong(){ UI.dsKq = null; render(); },
+  khoaNhanh(){ DB.khoa = {}; ['HK1', 'HK2'].forEach(hk => { DB.khoa[hk] = { gk: { che: 'tuDong', soNgay: 14 }, ck: { che: 'tuDong', soNgay: 14 } }; }); save(); render(); ding('ok'); toast('⏳ Cả 4 cột giữa kì / cuối kì tự khoá 14 ngày sau khi bắt đầu nhập — nhớ đóng gói lại, up index.html', 'ok'); },
+  async phatHanh(){
+    const lops = Object.values(DB.classes).filter(x => !x.demo); if (!lops.length) return toast('Chưa có lớp — up file vnEdu trước', 'warn');
+    const url = (($('#phUrl') || {}).value || '').trim().replace(/#.*$/, '');
+    if (!/^https:\/\/[^\s]+$/.test(url)) return toast('Nhập địa chỉ app trên mạng, VD https://ten-cua-thay.github.io/KHTN/ (xem hướng dẫn «Đưa lên mạng»)', 'warn');
+    if (!(window.crypto && crypto.subtle)) return toast('Trình duyệt này không mã hoá được — mở app bằng Chrome/Edge mới', 'bad');
+    const thieuTen = lops.filter(c => !Object.keys(TEN[c.id] || {}).length).map(c => c.ten);
+    if (thieuTen.length && !await modal(`<h3>Lớp chưa có họ tên: ${esc(thieuTen.join(', '))}</h3><p>Thầy cô phân môn sẽ chỉ thấy mã HS ở các lớp này. Nên up file vnEdu trước. Vẫn đóng gói?</p>`, [{ label: 'Thôi', v: 0 }, { label: 'Vẫn đóng gói', v: 1, cls: 'pri' }])) return;
+    PH = Object.assign({}, PH || {}); PH.k = PH.k || khoaMoi(); PH.url = url; PH.luc = new Date().toLocaleString('vi-VN'); PH.n = lops.length;
+    const goi = { k: 'DKHTN-GOI', v: 1, id: Date.now(), luc: PH.luc, lops: lops.map(c => ({ id: c.id, ten: c.ten, khoi: c.khoi, namHoc: c.namHoc, hs: c.hs.map(h => h.ma), cfg: c.cfg, ht: TEN[c.id] || {} })), khoa: DB.khoa || {} };
+    const g = await dongGoi(goi, PH.k), html = GOC_HTML.replace(/<script>\s*'use strict';/, () => '<script id="goiTo" type="application/json">' + JSON.stringify(g) + '<\/script>\n<script>\n\'use strict\';');
+    if (!html.includes('id="goiTo"')) return toast('Không đóng gói được (không thấy chỗ gắn dữ liệu) — báo người làm app', 'bad');
+    LS.set(KEYPH, PH); download(new Blob([html], { type: 'text/html' }), 'index.html'); render(); ding('win'); confetti();
+    toast(`📦 Đã đóng gói ${lops.length} lớp vào index.html — up file này lên GitHub (thay file cũ), rồi gửi link cho tổ`, 'ok');
+  },
+  async phDoiKhoa(){ if (!await modal('<h3>🔑 Đổi khoá?</h3><p>Link cũ sẽ <b>không mở được</b> lớp nữa. Sau khi đổi: đóng gói lại, up index.html, gửi link mới cho tổ.</p>', [{ label: 'Không', v: 0 }, { label: 'Đổi khoá', v: 1, cls: 'bad' }])) return;
+    PH.k = khoaMoi(); PH.luc = ''; LS.set(KEYPH, PH); render(); toast('Đã đổi khoá — bấm «Đóng gói» lại', 'ok'); },
+  async taiVnEdu(){
+    if (!VN) return toast('Chưa có file vnEdu — bấm 📗 Nạp file vnEdu', 'warn');
+    const m = await docExcel(fileVN()), kq = []; let n = 0;
+    m.sheets.forEach((x, i) => { if (!laKHTN(x)) return; const c = lopCuaTrang(x); if (!c) return; doCot(c, x); const r = dienTrang(m, i, c, VN.hk, false); n += r.n; kq.push(`${c.ten}: ${r.n} ô${r.khong ? ` (${r.khong} em chưa ghép)` : ''}`); });
+    if (!n) return toast(`Chưa có em nào đủ điểm 3 phân môn ${HKTEN[VN.hk]} — chưa có gì để điền`, 'warn');
+    const blob = await zipFiles(tinhLaiKhiMo(m.files.map(x => ({ name: x.name, data: x.data }))), 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    download(blob, VN.ten.replace(/\.xlsm$/i, '.xlsx')); ding('win'); confetti();
+    toast(`⬇ Đã tải file vnEdu (${HKTEN[VN.hk]}): ${esc(kq.join(' · '))} — mở bằng Excel, Lưu, rồi up lên vnEdu`, 'ok');
+  },
+  vnHK(el){ if (!VN) return; VN.hk = el.dataset.v; try { localStorage.setItem(KEYVN, JSON.stringify(VN)); } catch (e) {} UI.hk = VN.hk; render(); },
+  async vnXoa(){ if (!await modal('<h3>Xoá file vnEdu khỏi máy này?</h3><p>Điểm trong app không mất. Muốn điểm tự vào file thì up lại file vnEdu.</p>', [{ label: 'Không', v: 0 }, { label: 'Xoá file', v: 1, cls: 'bad' }])) return;
+    VN = null; UI.mau = null; try { localStorage.removeItem(KEYVN); } catch (e) {} render(); toast('Đã xoá file vnEdu khỏi máy này', 'ok'); },
+  async dsHoanTac(){ const k = UI.dsKq; if (!k) return;
+    if (!await modal('<h3>↩ Hoàn tác lần nạp danh sách?</h3><p>Các lớp và họ tên quay về như trước khi nạp file. Điểm gõ sau khi nạp cũng mất.</p>', [{ label: 'Không', v: 0 }, { label: '↩ Hoàn tác', v: 1, cls: 'bad' }])) return;
+    DB.classes = JSON.parse(k.undo.classes); TEN = JSON.parse(k.undo.ten); VN = k.undo.vn; UI.mau = k.undo.mau; try { VN ? localStorage.setItem(KEYVN, JSON.stringify(VN)) : localStorage.removeItem(KEYVN); } catch (e) {} DB.cur = DB.classes[k.undo.cur] ? k.undo.cur : Object.keys(DB.classes)[0] || null;
+    LS.set(KEYTEN, TEN); UI.dsKq = null; save(); render(); toast('Đã hoàn tác lần nạp danh sách', 'ok'); },
+  async taoLopTatCa(){
+    const m = UI.mau; if (!m) return; const tr = m.sheets.filter(s => laKHTN(s) && s.lop);
+    if (!tr.length) return toast('Không thấy trang KHTN nào có tên lớp (VD 8a1)', 'warn');
+    const r = await modal(`<h3>👥 Tạo / cập nhật ${tr.length} lớp theo file</h3><p>${tr.map(s => `<span class="pill">${esc(s.lop.toUpperCase())} · ${s.ds.length} em</span>`).join(' ')}</p><p class="small">Mỗi lớp có mã HS01… đúng thứ tự trong file. Lớp đã có (cùng tên) được cập nhật danh sách, điểm đang có giữ theo mã.</p><label class="row"><input type="checkbox" id="giuTen" checked> Giữ họ tên trên máy này để <b>ghép đúng em</b> khi đọc bảng điểm của tổ và khi điền file (không vào bản sao lưu, không vào mã gửi đi)</label>`,
+      [{ label: 'Huỷ', v: 0 }, { label: 'Tạo / cập nhật', v: 1, cls: 'pri' }], () => ($('#giuTen') || {}).checked);
+    if (!r || !r.v) return; let moi = 0, cu = 0;
+    tr.forEach(s => { let c = lopCuaTrang(s); if (!c){ c = sua(lopMoi({ ten: s.lop.toUpperCase(), khoi: +s.lop.match(/^\d+/)[0] || 8, siSo: 0 })); DB.classes[c.id] = c; moi++; } else cu++;
+      c.hs = s.ds.map((_, i) => ({ ma: 'HS' + pad2(i + 1) }));
+      if (r.d){ TEN[c.id] = {}; s.ds.forEach((ri, i) => TEN[c.id]['HS' + pad2(i + 1)] = tenDong(s, ri).replace(/\d{6,}/g, '').trim()); c.hienTen = true; } });
+    LS.set(KEYTEN, TEN); const lc = lopCuaTrang(m.sheets[m.si]) || lopCuaTrang(tr[0]); if (lc) DB.cur = lc.id; save(); render(); ding('win'); confetti();
+    toast(`👥 Đã tạo ${moi} lớp, cập nhật ${cu} lớp theo đúng thứ tự file`, 'ok');
+  },
+  async taoLopTuMau(){
+    const c = cls(), m = UI.mau; if (!m) return; const s = m.sheets[m.si];
+    const r = await modal(`<h3>👥 Tạo lại danh sách lớp ${esc(c.ten)} theo trang «${esc(s.name)}»</h3><p>Lớp sẽ có <b>${s.ds.length}</b> mã HS01…HS${pad2(s.ds.length)} đúng thứ tự trang. Điểm đang có giữ theo mã.</p><label class="row"><input type="checkbox" id="giuTen" checked> Giữ họ tên trên máy này (ghép đúng em) — không vào bản sao lưu</label>`, [{ label: 'Huỷ', v: 0 }, { label: 'Tạo', v: 1, cls: 'pri' }], () => ($('#giuTen') || {}).checked);
+    if (!r || !r.v) return; c.hs = s.ds.map((_, i) => ({ ma: 'HS' + pad2(i + 1) }));
+    if (r.d){ TEN[c.id] = {}; s.ds.forEach((ri, i) => TEN[c.id]['HS' + pad2(i + 1)] = tenDong(s, ri).replace(/\d{6,}/g, '').trim()); LS.set(KEYTEN, TEN); c.hienTen = true; }
+    save(); render(); ding('win'); toast(`Lớp ${esc(c.ten)} có ${s.ds.length} mã theo đúng thứ tự file vnEdu`, 'ok');
+  },
+  async bdGhi(){
+    const b = UI.bd; if (!b) return; const tong = [];
+    for (const [k, ch] of Object.entries(b.chon)){
+      const s = b.sheets[+k], c = DB.classes[ch.lop]; if (!c || !s.cot) continue;
+      const X = bdXem(c, s), kh = trangThaiKhoa(ch.hk, ch.dot).khoa; let n = 0, de = 0, vuot = 0, khoaBo = 0;
+      X.forEach(x => { if (!x.ma) return; const r = dong(c, ch.hk, x.ma); PMID.forEach(p => { const v = x.v[p]; if (v == null) return; if (v < 0 || v > maxPhan(c, p)){ vuot++; return; } const cu = num(r[ch.dot][p]); if (kh && cu != null){ if (cu !== v) khoaBo++; return; } if (cu != null && cu !== v) de++; r[ch.dot][p] = v; ghiBatDau(ch.hk, ch.dot); n++; }); });
+      c.nhan.push({ luc: new Date().toLocaleString('vi-VN'), pm: 'hoa', hk: ch.hk, n: X.filter(x => x.ma).length, de, tu: 'bảng điểm tổ (' + (ch.dot === 'gk' ? 'giữa kì' : 'cuối kì') + ')' });
+      tong.push(`${esc(c.ten)}: ${n} ô ${ch.dot === 'gk' ? 'giữa kì' : 'cuối kì'} ${HKTEN[ch.hk]}${de ? ` (thay ${de} ô khác)` : ''}${vuot ? ` · ⛔ bỏ ${vuot} ô vượt điểm tối đa` : ''}${khoaBo ? ` · 🔒 giữ ${khoaBo} ô đã khoá` : ''}`);
+    }
+    if (!tong.length) return toast('Chưa chọn lớp cho trang nào', 'warn');
+    save(); UI.bd = null; UI.tab = 'tong'; const ch0 = Object.values(b.chon)[0]; if (ch0){ UI.hk = ch0.hk; if (DB.classes[ch0.lop]) DB.cur = ch0.lop; } render(false); ding('win'); confetti();
+    toast('✔ Đã ghi: ' + tong.join(' · '), 'ok');
+  },
+  bdBo(){ UI.bd = null; render(); },
+  boMau(){ UI.mau = null; render(); }
+};
+async function napFileMau(f){
+  if (/\.xls$/i.test(f.name)) return toast('File .xls đời cũ: mở bằng Excel → «Lưu thành» .xlsx rồi kéo vào lại', 'warn');
+  try { const m = await docExcel(f); const co = m.sheets.filter(s => s.hr != null); if (!co.length) return toast('Không tìm thấy danh sách học sinh trong file (cột «Họ và tên»)', 'bad');
+    const i = cls() ? timTrang(m, cls()) : -1; m.si = i >= 0 ? i : m.sheets.indexOf(co.find(laKHTN) || co[0]); UI.mau = m; UI.tab = 'vnedu'; render(); ding('ok');
+    toast(`Đã đọc ${co.length} trang (${co.filter(laKHTN).length} trang KHTN)${Object.keys(DB.classes).filter(id => !DB.classes[id].demo).length ? '' : ' — bấm «Tạo / cập nhật lớp cho tất cả trang KHTN»'}`, 'ok'); }
+  catch (e) { toast('Không đọc được file: ' + esc(e.message), 'bad'); }
+}
+async function napBangDiem(f){
+  if (/\.xls$/i.test(f.name)) return toast('File .xls đời cũ: mở bằng Excel → «Lưu thành» .xlsx rồi kéo vào lại', 'warn');
+  try { const b = await docExcel(f); b.sheets.forEach(phanTichBD); b.chon = {}; b.sheets.forEach((s, i) => { if (s.hr != null && (s.cot.hoa != null || s.cot.li != null || s.cot.sinh != null)) bdChon(b, i); }); UI.bd = b; UI.tab = 'gui'; render(); ding('ok');
+    toast(`Đã đọc ${Object.keys(b.chon).length} trang bảng điểm — kiểm lớp, đợt, học kì rồi bấm «Ghi»`, 'ok'); }
+  catch (e) { toast('Không đọc được file: ' + esc(e.message), 'bad'); }
+}
+
+/* ---- ô điểm: kiểm thang, lưu ngay, Enter xuống dòng ---- */
+function ghiDiem(el){
+  const c = cls(), [hk, ma, k, x] = el.dataset.d.split('.'), raw = el.value.trim().replace(',', '.'), max = +el.dataset.max;
+  if (k !== 'tx' && trangThaiKhoa(hk, k).khoa){ const r0 = dongXem(c, hk, ma), v0 = (r0[k] || {})[x]; el.value = num(v0) != null ? String(v0).replace('.', ',') : ''; el.readOnly = true; return toast(`🔒 Cột ${tenCot(k)} ${HKTEN[hk]} đã khoá — muốn sửa, báo người tổng hợp`, 'warn'); }
+  const r = dong(c, hk, ma), dat = v => { if (k === 'tx') r.tx[+x] = v; else r[k][x] = v; };
+  if (raw === ''){ dat(''); el.classList.remove('sai', 'co'); saveSoon(); return; }
+  const v = +raw, loi = loiDiem(el, raw);
+  if (loi){ if (!el.classList.contains('sai')) ding('bad'); el.classList.add('sai'); el.title = loi; hienLoi(el, loi); return; }
+  const truoc = VN && hk === VN.hk && k !== 'tx' ? ketQua(c, hk, ma)[k].v : undefined;
+  el.classList.remove('sai'); el.classList.add('co'); el.title = ''; anLoi(); dat(v); if (k !== 'tx') ghiBatDau(hk, k); UI.suaOK[khoaMon(c, hk, k === 'tx' ? c.cfg.txPM[+x] : x)] = true; saveSoon();
+  if (truoc === null && UI.mau && timTrang(UI.mau, c) >= 0){ const sau = ketQua(c, hk, ma)[k].v; if (sau != null) toast(`📗 ${esc(tenOf(c, ma) || ma)} đủ 3 phân môn — ${k === 'gk' ? 'giữa kì' : 'cuối kì'} KHTN <b>${fmt(sau)}</b> đã vào file vnEdu`, 'ok'); }
+}
+function loiDiem(el, raw){
+  const max = +el.dataset.max, k = el.dataset.k, [, , loai, pm] = el.dataset.d.split('.');
+  if (!/^\d+(\.\d+)?$/.test(raw)) return `⛔ «${el.value}» không phải điểm — chỉ gõ số, VD 7 hoặc 2,75`;
+  if (+raw <= max) return '';
+  return loai === 'tx' ? `⛔ ${k} chấm thang 10 — vừa gõ ${fmt(+raw)}, lớn hơn 10`
+    : `⛔ Phần ${pmOf(pm)[1]} ${k === 'GK' ? 'giữa kì' : 'cuối kì'} khai báo tối đa <b>${fmt(max)}</b> điểm — vừa gõ <b>${fmt(+raw)}</b>. Gõ lại cho đúng (Esc: trả lại điểm cũ).`;
+}
+function hienLoi(el, msg){ const b = $('#loiO'), r = el.getBoundingClientRect(); b.innerHTML = msg; b.classList.remove('hidden'); b.style.left = Math.max(8, Math.min(innerWidth - 310, r.left - 10)) + 'px'; b.style.top = (r.bottom + 8) + 'px'; }
+const anLoi = () => { const b = $('#loiO'); if (b) b.classList.add('hidden'); };
+const rung = el => { el.classList.remove('rung'); void el.offsetWidth; el.classList.add('rung'); };
+document.addEventListener('input', e => {
+  const el = e.target;
+  if (el.classList.contains('sc')) return ghiDiem(el);
+  if (el.dataset.f && DB.tuGoi) return camKhaiBao();
+  if (el.dataset.f){ const c = cls(); let v = el.type === 'checkbox' ? el.checked : el.value; if (el.type === 'number' || el.dataset.num){ if (v === '') return; v = +v; } setPath(c, el.dataset.f.slice(2), v); if (el.dataset.f === 'c.cfg.soTX'){ c.cfg.soTX = Math.min(8, Math.max(1, +c.cfg.soTX || 4)); sua(c); } saveSoon(); }
+});
+document.addEventListener('change', e => {
+  const el = e.target;
+  if (el.dataset.f && el.dataset.rr) render();
+  else if (el.dataset.mapk && UI.mau){ const sh = UI.mau.sheets[UI.mau.si]; sh.map[el.dataset.mapk] = +el.value; render(); }
+  else if (el.dataset.bd != null && UI.bd){ const ch = bdChon(UI.bd, +el.dataset.bd); ch[el.dataset.k] = el.value; render(); }
+  else if ((el.dataset.khoa || el.dataset.bd != null || el.dataset.mapk || el.id === 'dsFile' || el.id === 'mauFile' || el.id === 'bdFile' || el.id === 'maFile') && DB.tuGoi){ el.value = ''; camKhaiBao(); }
+  else if (el.dataset.khoa){ const [hk, k, f] = el.dataset.khoa.split('.'); DB.khoa = DB.khoa || {}; const o = (DB.khoa[hk] = DB.khoa[hk] || {})[k] = DB.khoa[hk][k] || { che: 'mo', soNgay: 14 };
+    o[f] = f === 'soNgay' ? Math.max(1, Math.min(120, +el.value || 14)) : el.value; if (f === 'che' && el.value === 'ngay' && !o.ngay) o.ngay = new Date(Date.now() + 14 * 864e5).toISOString().slice(0, 10); save(); render(); ding('tap'); }
+  else if (el.id === 'bdFile' && el.files[0]){ napBangDiem(el.files[0]); el.value = ''; }
+  else if (el.id === 'dsFile' && el.files[0]){ napDanhSach(el.files[0]); el.value = ''; }
+  else if (el.id === 'mauFile' && el.files[0]){ napDanhSach(el.files[0]); el.value = ''; }
+  else if (el.id === 'maFile' && el.files[0]){ el.files[0].text().then(t => nhanMa(docMa(t))); el.value = ''; }
+  else if (el.id === 'fileIn' && el.files[0]){ moFile(el.files[0]); el.value = ''; }
+});
+document.addEventListener('keydown', e => {
+  const el = e.target; if (!el.classList || !el.classList.contains('sc')) return;
+  if (e.key === 'Escape' && el.classList.contains('sai')){ const [hk, ma, k, x] = el.dataset.d.split('.'), r = dongXem(cls(), hk, ma), v = k === 'tx' ? (r.tx || [])[+x] : (r[k] || {})[x]; el.value = num(v) != null ? String(v).replace('.', ',') : ''; el.classList.remove('sai'); anLoi(); return; }
+  if (e.key !== 'Enter' && e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
+  e.preventDefault(); if (el.classList.contains('sai')){ rung(el); ding('bad'); hienLoi(el, el.title); el.select(); return; } const td = el.closest('td'), tr = el.closest('tr'), ci = [...tr.children].indexOf(td), next = e.key === 'ArrowUp' ? tr.previousElementSibling : tr.nextElementSibling;
+  if (next){ const i = next.children[ci] && next.children[ci].querySelector('input'); if (i){ i.focus(); i.select(); } } else el.blur();
+});
+document.addEventListener('focusin', e => { const el = e.target; if (el.classList && el.classList.contains('sc') && el.dataset.xn) hoiMon(); });
+document.addEventListener('focusout', e => { const el = e.target; if (el.classList && el.classList.contains('sc') && el.classList.contains('sai')) setTimeout(() => { if (!el.isConnected){ anLoi(); return; } rung(el); el.focus(); el.select(); hienLoi(el, el.title); }, 0); });
+addEventListener('scroll', anLoi, true);
+document.addEventListener('focusout', e => { if (e.target.classList && e.target.classList.contains('sc') && !e.target.classList.contains('sai') && cls() && UI.tab === 'nhap') setTimeout(() => { if (!document.activeElement || !document.activeElement.classList.contains('sc')){ const y = scrollY; const rg = $$('#view .card')[0]; if (rg) render(); scrollTo(0, y); } }, 250); });
+const CHI_TONG_HOP = new Set(['lopMoi', 'lopMau', 'kieu', 'xoaLop', 'xoaTen', 'siSo', 'chiaSeLop', 'nhanMa', 'chonTrang', 'dienTrang', 'dienTatCa', 'taiFile', 'boMau', 'phatHanh', 'phDoiKhoa', 'khoaNhanh', 'taiVnEdu', 'vnHK', 'vnXoa', 'dsHoanTac', 'taoLopTatCa', 'taoLopTuMau', 'bdGhi', 'bdBo']);
+const camKhaiBao = () => { toast('🔒 Lớp, họ tên, cách tính, khoá điểm do người tổng hợp khai báo — thầy cô chỉ nhập điểm phân môn của mình', 'warn'); ding('bad'); };
+document.addEventListener('click', e => { const el = e.target.closest('[data-act]'); if (!el || el.disabled) return; if (DB.tuGoi && CHI_TONG_HOP.has(el.dataset.act)) return camKhaiBao(); const f = ACT[el.dataset.act]; if (f) f(el, e); });
+document.addEventListener('dragover', e => { if (e.target.closest && e.target.closest('#mauDrop,#maDrop,#bdDrop,#dsDrop')) e.preventDefault(); });
+document.addEventListener('drop', e => { const z = e.target.closest && e.target.closest('#mauDrop,#maDrop,#bdDrop,#dsDrop'); if (!z) return; e.preventDefault(); if (DB.tuGoi) return camKhaiBao(); const f = e.dataTransfer.files[0]; if (!f) return; if (z.id === 'mauDrop') napDanhSach(f); else if (z.id === 'bdDrop') napBangDiem(f); else if (z.id === 'dsDrop') napDanhSach(f); else f.text().then(t => nhanMa(docMa(t))); });
+async function moFile(f){
+  let data; try { data = JSON.parse(await f.text()); } catch (e) { return toast('File không đọc được', 'bad'); }
+  if (data.app !== 'So Diem KHTN' || !data.db || !data.db.classes) return toast('Đây không phải bản sao lưu của Sổ Điểm KHTN', 'bad');
+  if (DB.tuGoi){ let n = 0; for (const id in data.db.classes) if (DB.classes[id]){ DB.classes[id].d = data.db.classes[id].d || { HK1: {}, HK2: {} }; n++; } save(); render(false); return toast(`Đã mở lại điểm của ${n} lớp — lớp, họ tên, cách tính, khoá điểm giữ theo link của người tổng hợp`, 'ok'); }
+  const v = await modal(`<h3>📂 Mở bản sao lưu</h3><p>File có <b>${Object.keys(data.db.classes).length} lớp</b>. Gộp vào app hay thay toàn bộ?</p>`, [{ label: 'Huỷ', v: 0 }, { label: 'Gộp vào', v: 1, cls: 'pri' }, { label: 'Thay toàn bộ', v: 2, cls: 'bad' }]);
+  if (!v) return; if (v === 2) DB.classes = {}; for (const id in data.db.classes) DB.classes[id] = sua(data.db.classes[id]); DB.cur = data.db.cur && DB.classes[data.db.cur] ? data.db.cur : Object.keys(DB.classes)[0]; save(); render(false); toast('Đã mở bản sao lưu', 'ok');
+}
+
+/* ================= KHỞI ĐỘNG ================= */
+(function(){
+  for (const id in DB.classes) sua(DB.classes[id]);
+  if (!DB.classes[DB.cur]) DB.cur = Object.keys(DB.classes)[0] || null;
+  const h = new URLSearchParams(location.hash.slice(1));
+  if (h.get('mau')){ CHUP = true; DB = { v: 1, cur: null, classes: {}, muted: true }; TEN = {}; const c = lopMau(); DB.classes[c.id] = c; DB.cur = c.id; }
+  if (h.get('tab') && TABS.some(t => t[0] === h.get('tab'))) UI.tab = h.get('tab');
+  if (h.get('pm') && PMID.includes(h.get('pm'))) UI.pm = h.get('pm');
+  $('#clsSel').onchange = e => { if (DB.classes[e.target.value]){ DB.cur = e.target.value; save(); render(false); } };
+  if (!CHUP){ const v = LS.get(KEYVN, null); if (v && v.b64){ VN = v; UI.hk = VN.hk; } }
+  render(false); apGoi().catch(() => {});
+  if (VN) docExcel(fileVN()).then(m => { const i = m.sheets.findIndex(x => laKHTN(x) && x.ds.length); m.si = i < 0 ? 0 : i; UI.mau = m; render(); }).catch(() => toast('Không mở lại được file vnEdu đã giữ — up lại file', 'warn'));
+})();
+</script>
+</body>
+</html>
